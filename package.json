@@ -1,0 +1,15 @@
+{
+  "name": "cella",
+  "version": "1.0.0",
+  "description": "A simple lightweight JSON storage library",
+  "main": "./dist/index.js",
+  "bin":{
+      "cella": "./dist/cli.js"
+  }, 
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["storage", "database", "db", "library"],
+  "author": "stackwithans",
+  "license": "ISC"
+}
