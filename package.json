@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1", 
     "build": "tsc", 
-    "cli": "ts-node ./src/cli.ts"
+    "cli": "ts-node ./cli.ts"
   },
   "bin":{
       "cella": "./dist/cli.js"
@@ -15,7 +15,8 @@
     "storage",
     "database",
     "db",
-    "library"
+    "library",
+    "store"
   ],
   "author": "stackwithans",
   "license": "ISC",
