@@ -25,18 +25,18 @@ interface CellaItem<T = any> extends Object {
 
 type Index = string | number;
 
-class Collection {
+export class Collection {
     name: string;
-    private items: Map<Index, CellaItem> = new Map();
+    private _items: Map<Index, CellaItem> = new Map();
 
     constructor(name: string) {
         this.name = name;
     }
 
     private validateInsert(item: CellaItem) {
-        if (this.items.has(item.id)) {
+        if (this._items.has(item.id)) {
             throw Error(
-                `Error: The id ${item.id} is already exists use in the ${this.name} collection`
+                `InsertionError: The id ${item.id} is already exists use in the ${this.name} collection`
             );
         }
     }
@@ -45,16 +45,32 @@ class Collection {
       the changes with the data on disk**/
     initInsert(item: CellaItem) {
         this.validateInsert(item);
-        this.items.set(item.id, item);
+        this._items.set(item.id, item);
+    }
+
+    count(): number {
+        return this._items.size;
     }
 }
 
 export class CellaStore {
     readonly _collections: Map<string | number, Collection> = new Map();
     /** Provides references to the collections in the store.
+        If the collection does not exist, it will be created
      * @param {string} collection - name of the collection to be returned.
      */
-    collections(collection: string) {}
+    collections(collection: string) {
+        let ref = this._collections.get(collection);
+        if (collection === undefined) {
+            ref = new Collection(collection);
+            this._collections.set(collection, ref);
+        }
+        return ref;
+    }
+
+    hasCollection(collection: string) {
+        return this._collections.has(collection);
+    }
 
     /** Returns the name of all collections in the store.
      */
@@ -110,19 +126,13 @@ export function validateCellaItem(item: CellaItem) {
     }
 }
 
-export function loadCellaStore(storePath: string): CellaStore {
-    let storedData: CellaItem[];
-    try {
-        storedData = JSON.parse(readFileSync(storePath, "utf8"));
-    } catch (err) {
-        //#TODO: Improve error reporting
-        console.error(
-            "Bad error ocurred while trying to parse and open the saved store data",
-            err
-        );
-        process.exit(1);
-    }
+export function buildStore(storedData: CellaItem[]) {
     const store = new CellaStore();
+    if (!(storedData instanceof Array)) {
+        throw new Error(
+            "Invalid schema passed to function. Argument must be an array of objects"
+        );
+    }
     storedData.forEach((item) => {
         validateCellaItem(item);
         const colName = item.collection;
@@ -134,4 +144,10 @@ export function loadCellaStore(storePath: string): CellaStore {
         collection.initInsert(item);
     });
     return store;
+}
+
+export function loadStoreFromFile(storePath: string): CellaStore {
+    let storedData: CellaItem[];
+    storedData = JSON.parse(readFileSync(storePath, "utf8"));
+    return buildStore(storedData);
 }

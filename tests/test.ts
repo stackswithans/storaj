@@ -1,4 +1,10 @@
-import { itemHasProp, validateCellaItem } from "../src/main";
+import {
+    itemHasProp,
+    validateCellaItem,
+    buildStore,
+    CellaStore,
+    Collection,
+} from "../src/main";
 import { test, runTests } from "./utils";
 import * as assert from "assert";
 
@@ -68,6 +74,32 @@ runTests(
                 `InvalidItemError: collection name must not be empty. item: ${JSON.stringify(
                     item
                 )}`
+            )
+        );
+    }),
+
+    test("buildStore works on valid store schema", () => {
+        const store = [
+            {
+                id: 1,
+                collection: "messages",
+                data: {},
+            },
+        ];
+
+        const cellaStore = buildStore(store);
+        assert.ok(cellaStore instanceof CellaStore);
+        assert.ok(cellaStore.hasCollection("messages"));
+        assert.deepEqual(cellaStore.colNames()[0], "messages");
+        assert.ok(cellaStore.collections("messages") instanceof Collection);
+    }),
+
+    test("buildStore fails with bad schema", () => {
+        const store = {} as any;
+        assert.throws(
+            () => buildStore(store),
+            new Error(
+                "Invalid schema passed to function. Argument must be an array of objects"
             )
         );
     })
