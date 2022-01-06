@@ -1,4 +1,5 @@
 import { readFileSync } from "fs";
+import { EventEmitter } from "events";
 /*
 
 Collection contains CelloObjects
@@ -39,6 +40,14 @@ export class Collection {
                 `InsertionError: The id ${item.id} is already exists use in the ${this.name} collection`
             );
         }
+    }
+
+    /**Inserts an item into the collection and persists the changes
+      @params {CellaItem} item - the item to add to the collection 
+      @returns {Promise<boolean>} - boolean indicating wheter the insertion suceeded 
+    **/
+    async insert(item: CellaItem, id?: Index): Promise<boolean> {
+        return false;
     }
 
     /**Inserts an item into the collection but does not sync 
@@ -135,12 +144,7 @@ export function buildStore(storedData: CellaItem[]) {
     }
     storedData.forEach((item) => {
         validateCellaItem(item);
-        const colName = item.collection;
-        let collection = store._collections.get(item.collection);
-        if (!collection) {
-            collection = new Collection(colName);
-            store._collections.set(colName, collection as Collection);
-        }
+        const collection = store.collections(item.collection);
         collection.insertNoSave(item);
     });
     return store;
