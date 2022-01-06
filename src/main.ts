@@ -43,7 +43,7 @@ export class Collection {
 
     /**Inserts an item into the collection but does not sync 
       the changes with the data on disk**/
-    initInsert(item: CellaItem) {
+    insertNoSave(item: CellaItem) {
         this.validateInsert(item);
         this._items.set(item.id, item);
     }
@@ -141,7 +141,7 @@ export function buildStore(storedData: CellaItem[]) {
             collection = new Collection(colName);
             store._collections.set(colName, collection as Collection);
         }
-        collection.initInsert(item);
+        collection.insertNoSave(item);
     });
     return store;
 }
