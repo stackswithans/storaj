@@ -81,7 +81,7 @@ function enforcePropExists(item: CellaItem, prop: string, type: string) {
     }
 }
 
-function validateCellaItem(item: CellaItem) {
+export function validateCellaItem(item: CellaItem) {
     enforcePropExists(item, "id", "string");
     enforcePropExists(item, "collection", "string");
     enforcePropExists(item, "data", "object");

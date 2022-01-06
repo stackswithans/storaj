@@ -4,13 +4,10 @@
   "description": "A simple lightweight JSON storage library",
   "main": "./dist/main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1", 
-    "build": "tsc", 
+    "test": "ts-node ./tests/test.ts",
+    "build": "tsc",
     "cli": "ts-node ./cli.ts"
   },
-  "bin":{
-      "cella": "./dist/cli.js"
-  }, 
   "keywords": [
     "storage",
     "database",
