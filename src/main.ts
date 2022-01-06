@@ -63,28 +63,51 @@ export class CellaStore {
     }
 }
 
-function enforcePropExists(item: CellaItem, prop: string, type: string) {
+export function itemHasProp(
+    item: CellaItem,
+    prop: string,
+    type: string
+): boolean {
     const value = item[prop];
     if (value === undefined) {
-        throw new Error(
-            `InvalidItemError: The following item does not have the ${prop} property: ${item}`
-        );
+        return false;
     }
     const propType = typeof value;
     // Ids can be numbers or strings;
-    if (prop === "id" && (propType === "string" || propType === "number"))
-        return;
     if (propType !== type) {
-        throw new Error(
-            `InvalidItemError: The following item has a property of the wrong type:${item}\nPropery:${prop}\nExpected type:${type}\nActualtype:${propType} `
-        );
+        return false;
     }
+    return true;
 }
 
 export function validateCellaItem(item: CellaItem) {
-    enforcePropExists(item, "id", "string");
-    enforcePropExists(item, "collection", "string");
-    enforcePropExists(item, "data", "object");
+    //Empty string id
+    if (item.id === "") {
+        throw new Error(
+            `InvalidItemError: id must not be empty. item: ${JSON.stringify(
+                item
+            )}`
+        );
+    }
+    if (item.collection === "") {
+        throw new Error(
+            `InvalidItemError: collection name must not be empty. item: ${JSON.stringify(
+                item
+            )}`
+        );
+    }
+    const isValid =
+        (itemHasProp(item, "id", "string") ||
+            itemHasProp(item, "id", "number")) &&
+        itemHasProp(item, "collection", "string") &&
+        itemHasProp(item, "data", "object");
+    if (!isValid) {
+        throw new Error(
+            `InvalidItemError: The following item is missing props or has props of the wrong type: ${JSON.stringify(
+                item
+            )}`
+        );
+    }
 }
 
 export function loadCellaStore(storePath: string): CellaStore {
