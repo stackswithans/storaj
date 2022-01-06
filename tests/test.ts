@@ -92,9 +92,10 @@ runTests(
         assert.ok(cellaStore.hasCollection("messages"));
         assert.deepEqual(cellaStore.colNames()[0], "messages");
         assert.ok(cellaStore.collections("messages") instanceof Collection);
+        assert.deepEqual(cellaStore.collections("messages").count(), 1);
     }),
 
-    test("buildStore fails with bad schema", () => {
+    test("buildStore fails with non-list argument", () => {
         const store = {} as any;
         assert.throws(
             () => buildStore(store),
@@ -102,5 +103,28 @@ runTests(
                 "Invalid schema passed to function. Argument must be an array of objects"
             )
         );
+    }),
+
+    test("CellaStore collections creates new collection if not exists", () => {
+        const store = new CellaStore();
+        assert.deepEqual(
+            store.hasCollection("test"),
+            false,
+            "Should be false. Test hasn't been created"
+        );
+        store.collections("test");
+        assert.deepEqual(
+            store.hasCollection("test"),
+            true,
+            "Should be true. Test has been created"
+        );
+    }),
+
+    test("CellaStore colNames returns collection names", () => {
+        const store = new CellaStore();
+        store.collections("test");
+        store.collections("test2");
+        store.collections("test3");
+        assert.deepEqual(store.colNames(), ["test", "test2", "test3"]);
     })
 );

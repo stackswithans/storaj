@@ -59,13 +59,13 @@ export class CellaStore {
         If the collection does not exist, it will be created
      * @param {string} collection - name of the collection to be returned.
      */
-    collections(collection: string) {
+    collections(collection: string): Collection {
         let ref = this._collections.get(collection);
-        if (collection === undefined) {
+        if (ref === undefined) {
             ref = new Collection(collection);
             this._collections.set(collection, ref);
         }
-        return ref;
+        return ref as Collection;
     }
 
     hasCollection(collection: string) {
