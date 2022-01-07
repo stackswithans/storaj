@@ -9,19 +9,19 @@ export function test(description: string, fn: TestFunction) {
     return { desc: description, run: fn };
 }
 
-export function runTests(...tests: Test[]) {
+export async function runTests(...tests: Test[]) {
     const stats: RunStats = { passed: 0, failed: 0, total: tests.length };
     const failures: FailedTest[] = [];
     const startTime = performance.now();
-    tests.forEach(({ desc, run }) => {
+    for (let { desc, run } of tests) {
         try {
-            run();
+            await run();
             stats.passed += 1;
         } catch (err) {
             failures.push({ desc, error: err as Error });
             stats.failed += 1;
         }
-    });
+    }
     const total = performance.now() - startTime;
 
     console.log("======Test report======");
@@ -38,7 +38,10 @@ export function runTests(...tests: Test[]) {
     failures.forEach(({ desc, error }) => {
         console.log(desc);
         console.log("-----------------------------");
-        console.error(error.message);
+        if (process.argv[2] === "-v" || process.argv[2] === "--verbose")
+            console.error(error);
+        else console.error(error.message);
+
         console.error("\n\n\n");
     });
 }

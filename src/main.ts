@@ -1,5 +1,5 @@
 import { readFileSync } from "fs";
-import { EventEmitter } from "events";
+import { randomUUID } from "crypto";
 /*
 
 Collection contains CelloObjects
@@ -17,7 +17,7 @@ Two types of objects:
  - Can't have an item without a collection
 */
 
-interface CellaItem<T = any> extends Object {
+interface CellaItem<T extends object = any> {
     collection: string;
     id: string | number;
     data: T;
@@ -26,39 +26,56 @@ interface CellaItem<T = any> extends Object {
 
 type Index = string | number;
 
+type PersistFn = () => void;
+
 export class Collection {
     name: string;
-    private _items: Map<Index, CellaItem> = new Map();
+    private items: Map<Index, CellaItem> = new Map();
+    private persist: PersistFn;
 
-    constructor(name: string) {
+    constructor(name: string, persist: PersistFn) {
         this.name = name;
+        this.persist = persist;
     }
 
     private validateInsert(item: CellaItem) {
-        if (this._items.has(item.id)) {
-            throw Error(
-                `InsertionError: The id ${item.id} is already exists use in the ${this.name} collection`
+        const idIsValid =
+            itemHasProp(item, "id", "string") ||
+            itemHasProp(item, "id", "number");
+        if (!idIsValid) {
+            throw new Error(
+                `InsertionError: The id of an item must be a number or a string.`
+            );
+        }
+        if (this.items.has(item.id)) {
+            throw new Error(
+                `InsertionError: The id '${item.id}' already exists in the '${this.name}' collection`
             );
         }
     }
 
     /**Inserts an item into the collection and persists the changes
       @params {CellaItem} item - the item to add to the collection 
-      @returns {Promise<boolean>} - boolean indicating wheter the insertion suceeded 
     **/
-    async insert(item: CellaItem, id?: Index): Promise<boolean> {
-        return false;
+    async insert<T extends object>(object: T, id?: Index) {
+        if (id === undefined) {
+            id = randomUUID();
+        }
+        const item = { id, collection: this.name, data: object };
+        this.validateInsert(item);
+        this.items.set(item.id, item);
+        await this.persist();
     }
 
     /**Inserts an item into the collection but does not sync 
       the changes with the data on disk**/
     insertNoSave(item: CellaItem) {
         this.validateInsert(item);
-        this._items.set(item.id, item);
+        this.items.set(item.id, item);
     }
 
     count(): number {
-        return this._items.size;
+        return this.items.size;
     }
 }
 
@@ -71,13 +88,13 @@ export class CellaStore {
     collections(collection: string): Collection {
         let ref = this._collections.get(collection);
         if (ref === undefined) {
-            ref = new Collection(collection);
+            ref = new Collection(collection, this._persist);
             this._collections.set(collection, ref);
         }
         return ref as Collection;
     }
 
-    hasCollection(collection: string) {
+    hasCollection(collection: string): boolean {
         return this._collections.has(collection);
     }
 
@@ -86,12 +103,17 @@ export class CellaStore {
     colNames(): string[] {
         return Array.from(this._collections.keys()) as string[];
     }
+
+    private async _persist() {
+        //#TODO: Add logic to save data to filesystem;
+        //throw new Error("Not implemented yet");
+    }
 }
 
 export function itemHasProp(
     item: CellaItem,
     prop: string,
-    type: string
+    type: "number" | "string" | "object" | "undefined"
 ): boolean {
     const value = item[prop];
     if (value === undefined) {
@@ -135,7 +157,7 @@ export function validateCellaItem(item: CellaItem) {
     }
 }
 
-export function buildStore(storedData: CellaItem[]) {
+export function buildStore(storedData: CellaItem[]): CellaStore {
     const store = new CellaStore();
     if (!(storedData instanceof Array)) {
         throw new Error(
