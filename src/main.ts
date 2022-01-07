@@ -185,8 +185,11 @@ export function validateCellaItem(item: CellaItem) {
     }
 }
 
-export function buildStore(storedData: CellaItem[]): CellaStore {
-    const store = new CellaStore();
+export function buildStore(
+    storedData: CellaItem[],
+    storePath: string = ""
+): CellaStore {
+    const store = new CellaStore(storePath);
     if (!(storedData instanceof Array)) {
         throw new Error(
             "Invalid schema passed to function. Argument must be an array of objects"
@@ -203,5 +206,5 @@ export function buildStore(storedData: CellaItem[]): CellaStore {
 export function loadStoreFromFile(storePath: string): CellaStore {
     let storedData: CellaItem[];
     storedData = JSON.parse(readFileSync(storePath, "utf8"));
-    return buildStore(storedData);
+    return buildStore(storedData, storePath);
 }
