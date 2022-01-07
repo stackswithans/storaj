@@ -71,7 +71,9 @@ export class Collection extends EventEmitter {
     }
 
     //#TODO: Implement this;
-    get<T>(id: Index): T {}
+    get<T>(id: Index): T {
+        return ({} as unknown) as T;
+    }
 
     //#TODO: Implement this;
     query() {}
@@ -137,13 +139,11 @@ export class CellaStore {
         return JSON.stringify(items);
     }
 
-    //#TODO: Test this;
     async persist() {
         if (!this.fPath) {
             return;
         }
         await writeFile(this.fPath, this.serialize(), { encoding: "utf8" });
-        //throw new Error("Not implemented yet");
     }
 }
 

@@ -7,6 +7,8 @@ import {
 } from "../src/main";
 import { test, runTests } from "./utils";
 import * as assert from "assert";
+import { readFileSync } from "fs";
+import { unlink } from "fs/promises";
 
 runTests(
     test("itemHasProp works", () => {
@@ -179,5 +181,20 @@ runTests(
                 { id: 2, collection: "test", data: { message: "message2" } },
             ])
         );
+    }),
+
+    test("Test CellaStore persist saves file if path given", async () => {
+        const filePath = "test.json";
+        const store = new CellaStore(filePath);
+        const testCol = store.collections("test");
+        await testCol.insert({ message: "message1" }, 1);
+        await testCol.insert({ message: "message2" }, 2);
+        await store.persist();
+
+        const data = readFileSync(filePath, "utf8");
+        assert.deepStrictEqual(data, store.serialize());
+
+        //Clean up opened file
+        await unlink(filePath);
     })
 );
