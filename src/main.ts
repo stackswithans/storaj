@@ -88,8 +88,8 @@ export class Collection extends EventEmitter {
 }
 
 export class CellaStore {
-    /**@property filePath - Path to the file where the data should be persisted*/
-    readonly _fPath: string;
+    /**@property fPath - Path to the file where the data should be persisted*/
+    readonly fPath: string;
     readonly _collections: Map<string | number, Collection> = new Map();
     /** Provides references to the collections in the store.
         If the collection does not exist, it will be created
@@ -98,7 +98,7 @@ export class CellaStore {
     //#TODO: Implement options for the persistance
     constructor(fPath: string = "") {
         //Empty string means that data should not be persisted to disk
-        this._fPath = fPath;
+        this.fPath = fPath;
     }
 
     collections(collection: string): Collection {
@@ -130,10 +130,10 @@ export class CellaStore {
 
     async persist() {
         //#TODO: Add logic to save data to filesystem;
-        if (!this._fPath) {
+        if (!this.fPath) {
             return;
         }
-        await writeFile(this._fPath, this.serialize(), { encoding: "utf8" });
+        await writeFile(this.fPath, this.serialize(), { encoding: "utf8" });
         //throw new Error("Not implemented yet");
     }
 }
