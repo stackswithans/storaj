@@ -41,7 +41,7 @@ export class Collection extends EventEmitter {
         this._onUpdate = onUpdate;
     }
 
-    private validateInsert(item: CellaItem) {
+    private _validateInsert(item: CellaItem) {
         const idIsValid =
             itemHasProp(item, "id", "string") ||
             itemHasProp(item, "id", "number");
@@ -60,20 +60,29 @@ export class Collection extends EventEmitter {
     /**Inserts an item into the collection and persists the changes
       @params {CellaItem} item - the item to add to the collection 
     **/
-    async insert<T extends object>(object: T, id?: Index) {
+    async insert<T>(object: T, id?: Index) {
         if (id === undefined) {
             id = randomUUID();
         }
         const item = { id, collection: this.name, data: object };
-        this.validateInsert(item);
+        this._validateInsert(item);
         this._items.set(item.id, item);
         await this._onUpdate();
     }
 
+    //#TODO: Implement this;
+    get<T>(id: Index): T {}
+
+    //#TODO: Implement this;
+    query() {}
+
+    //#TODO: Implement this;
+    aggregate() {}
+
     /**Inserts an item into the collection but does not sync 
       the changes with the data on disk**/
     insertNoSave<T>(item: CellaItem<T>) {
-        this.validateInsert(item);
+        this._validateInsert(item);
         this._items.set(item.id, item);
     }
 
@@ -128,8 +137,8 @@ export class CellaStore {
         return JSON.stringify(items);
     }
 
+    //#TODO: Test this;
     async persist() {
-        //#TODO: Add logic to save data to filesystem;
         if (!this.fPath) {
             return;
         }
@@ -203,6 +212,7 @@ export function buildStore(
     return store;
 }
 
+//#TODO: Test this;
 export function loadStoreFromFile(storePath: string): CellaStore {
     let storedData: CellaItem[];
     storedData = JSON.parse(readFileSync(storePath, "utf8"));
