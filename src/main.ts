@@ -1,5 +1,7 @@
+import { writeFile } from "fs/promises";
 import { readFileSync } from "fs";
 import { randomUUID } from "crypto";
+import EventEmitter = require("events");
 /*
 
 Collection contains CelloObjects
@@ -17,7 +19,7 @@ Two types of objects:
  - Can't have an item without a collection
 */
 
-interface CellaItem<T extends object = any> {
+interface CellaItem<T = any> {
     collection: string;
     id: string | number;
     data: T;
@@ -28,14 +30,15 @@ type Index = string | number;
 
 type PersistFn = () => void;
 
-export class Collection {
+export class Collection extends EventEmitter {
     name: string;
-    private items: Map<Index, CellaItem> = new Map();
-    private persist: PersistFn;
+    private _items: Map<Index, CellaItem> = new Map();
+    private _onUpdate: PersistFn;
 
-    constructor(name: string, persist: PersistFn) {
+    constructor(name: string, onUpdate: PersistFn) {
+        super();
         this.name = name;
-        this.persist = persist;
+        this._onUpdate = onUpdate;
     }
 
     private validateInsert(item: CellaItem) {
@@ -47,7 +50,7 @@ export class Collection {
                 `InsertionError: The id of an item must be a number or a string.`
             );
         }
-        if (this.items.has(item.id)) {
+        if (this._items.has(item.id)) {
             throw new Error(
                 `InsertionError: The id '${item.id}' already exists in the '${this.name}' collection`
             );
@@ -63,32 +66,45 @@ export class Collection {
         }
         const item = { id, collection: this.name, data: object };
         this.validateInsert(item);
-        this.items.set(item.id, item);
-        await this.persist();
+        this._items.set(item.id, item);
+        this._onUpdate();
     }
 
     /**Inserts an item into the collection but does not sync 
       the changes with the data on disk**/
-    insertNoSave(item: CellaItem) {
+    insertNoSave<T>(item: CellaItem<T>) {
         this.validateInsert(item);
-        this.items.set(item.id, item);
+        this._items.set(item.id, item);
+    }
+
+    /** Returns all the items in a collection*/
+    all<T>(): CellaItem<T>[] {
+        return Array.from(this._items.values());
     }
 
     count(): number {
-        return this.items.size;
+        return this._items.size;
     }
 }
 
 export class CellaStore {
+    /**@property filePath - Path to the file where the data should be persisted*/
+    readonly fPath: string;
     readonly _collections: Map<string | number, Collection> = new Map();
     /** Provides references to the collections in the store.
         If the collection does not exist, it will be created
      * @param {string} collection - name of the collection to be returned.
      */
+    //#TODO: Implement options for the persistance
+    constructor(fPath: string = "") {
+        //Empty string means that data should not be persisted to disk
+        this.fPath = fPath;
+    }
+
     collections(collection: string): Collection {
         let ref = this._collections.get(collection);
         if (ref === undefined) {
-            ref = new Collection(collection, this._persist);
+            ref = new Collection(collection, this.persist);
             this._collections.set(collection, ref);
         }
         return ref as Collection;
@@ -104,8 +120,20 @@ export class CellaStore {
         return Array.from(this._collections.keys()) as string[];
     }
 
-    private async _persist() {
+    serialize(): string {
+        let items: CellaItem[] = [];
+        for (let collection of this._collections.values()) {
+            items = [...items, ...collection.all()];
+        }
+        return JSON.stringify(items);
+    }
+
+    async persist() {
         //#TODO: Add logic to save data to filesystem;
+        if (!this.fPath) {
+            return;
+        }
+        await writeFile(this.fPath, this.serialize(), { encoding: "utf8" });
         //throw new Error("Not implemented yet");
     }
 }

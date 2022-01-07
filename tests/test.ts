@@ -128,16 +128,16 @@ runTests(
         assert.deepStrictEqual(store.colNames(), ["test", "test2", "test3"]);
     }),
 
-    test("Test collection insert works", () => {
+    test("Test collection insert works", async () => {
         const store = new CellaStore();
         const testCol = store.collections("test");
-        testCol.insert({ message: "message1" });
+        await testCol.insert({ message: "message1" });
         assert.deepStrictEqual(testCol.count(), 1);
 
-        testCol.insert({ message: "message2" }, 1);
+        await testCol.insert({ message: "message2" }, 1);
         assert.deepStrictEqual(testCol.count(), 2);
 
-        testCol.insert({ message: "message3" }, "message-from-bae");
+        await testCol.insert({ message: "message3" }, "message-from-bae");
         assert.deepStrictEqual(testCol.count(), 3);
     }),
 
@@ -156,12 +156,28 @@ runTests(
     test("Test collection insert fails with existing id", async () => {
         const store = new CellaStore();
         const testCol = store.collections("test");
-        testCol.insert({ message: "message1" }, 2);
+        await testCol.insert({ message: "message1" }, 2);
         await assert.rejects(
             async () => await testCol.insert({ message: "message2" }, 2),
             new Error(
                 `InsertionError: The id '2' already exists in the 'test' collection`
             )
+        );
+    }),
+
+    test("Test CellaStore serialize works correctly", async () => {
+        const store = new CellaStore();
+        const testCol = store.collections("test");
+        await testCol.insert({ message: "message1" }, 1);
+        await testCol.insert({ message: "message2" }, 2);
+
+        const serStore = store.serialize();
+        assert.deepStrictEqual(
+            serStore,
+            JSON.stringify([
+                { id: 1, collection: "test", data: { message: "message1" } },
+                { id: 2, collection: "test", data: { message: "message2" } },
+            ])
         );
     })
 );
