@@ -28,7 +28,7 @@ interface CellaItem<T = any> {
 
 type Index = string | number;
 
-type PersistFn = () => void;
+type PersistFn = () => Promise<void>;
 
 export class Collection extends EventEmitter {
     name: string;
@@ -67,7 +67,7 @@ export class Collection extends EventEmitter {
         const item = { id, collection: this.name, data: object };
         this.validateInsert(item);
         this._items.set(item.id, item);
-        this._onUpdate();
+        await this._onUpdate();
     }
 
     /**Inserts an item into the collection but does not sync 
