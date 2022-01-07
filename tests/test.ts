@@ -196,5 +196,18 @@ runTests(
 
         //Clean up opened file
         await unlink(filePath);
+    }),
+
+    test("Test Collection get works as expected", async () => {
+        const store = new CellaStore();
+        const testCol = store.collections("test");
+        await testCol.insert({ message: "message1" }, 1);
+        await testCol.insert({ message: "message2" }, 2);
+
+        assert.notDeepStrictEqual(testCol.get(1), null);
+        assert.deepStrictEqual(testCol.get(1)?.data, { message: "message1" });
+        assert.notDeepStrictEqual(testCol.get(2), null);
+        assert.deepStrictEqual(testCol.get(2)?.data, { message: "message2" });
+        assert.deepStrictEqual(testCol.get(3), null);
     })
 );

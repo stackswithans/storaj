@@ -60,6 +60,7 @@ export class Collection extends EventEmitter {
     /**Inserts an item into the collection and persists the changes
       @params {CellaItem} item - the item to add to the collection 
     **/
+    //#TODO: Return the inserted object or their id
     async insert<T>(object: T, id?: Index) {
         if (id === undefined) {
             id = randomUUID();
@@ -71,8 +72,12 @@ export class Collection extends EventEmitter {
     }
 
     //#TODO: Implement this;
-    get<T>(id: Index): T {
-        return ({} as unknown) as T;
+    get<T>(id: Index): CellaItem<T> | null {
+        const item = this._items.get(id);
+        if (item === undefined) {
+            return null;
+        }
+        return item;
     }
 
     //#TODO: Implement this;
@@ -212,7 +217,6 @@ export function buildStore(
     return store;
 }
 
-//#TODO: Test this;
 export function loadStoreFromFile(storePath: string): CellaStore {
     let storedData: CellaItem[];
     storedData = JSON.parse(readFileSync(storePath, "utf8"));
