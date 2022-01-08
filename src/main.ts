@@ -1,7 +1,6 @@
 import { writeFile } from "fs/promises";
 import { readFileSync } from "fs";
 import { randomUUID } from "crypto";
-import EventEmitter = require("events");
 /*
 
 Collection contains CelloObjects
@@ -17,6 +16,15 @@ Two types of objects:
 
 
  - Can't have an item without a collection
+
+
+ Querying the store:
+
+  store.collections("message").query({
+    id: op.ne(1), 
+    message: op.ne(1), 
+  }, { id: 2 });
+
 */
 
 interface CellaItem<T = any> {
@@ -30,13 +38,12 @@ type Index = string | number;
 
 type PersistFn = () => Promise<void>;
 
-export class Collection extends EventEmitter {
+export class Collection {
     name: string;
     private _items: Map<Index, CellaItem> = new Map();
     private _onUpdate: PersistFn;
 
     constructor(name: string, onUpdate: PersistFn) {
-        super();
         this.name = name;
         this._onUpdate = onUpdate;
     }
