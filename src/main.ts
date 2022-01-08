@@ -27,20 +27,37 @@ Two types of objects:
 
 */
 
-interface CellaItem<T = any> {
-    collection: string;
-    id: string | number;
-    data: T;
-    [prop: string]: any;
-}
+type ItemBase = { _id: Index };
+
+type Item<T extends ItemBase> = {
+    [Property in keyof T]: T[Property];
+};
+
+type SerializedBase = { _id: Index; _collection: string };
+
+type SerializedItem<T extends SerializedBase = SerializedBase> = {
+    [Property in keyof T]: T[Property];
+};
 
 type Index = string | number;
 
 type PersistFn = () => Promise<void>;
 
-export class Collection {
+interface Predicate {
+    [field: string]: string | number;
+}
+
+function runQuery<T extends ItemBase>(
+    items: Map<Index, Item<T>>,
+    ...predicates: Predicate[]
+): Item<T>[] {
+    const resultSet: Item<T>[] = [];
+    return resultSet;
+}
+
+export class Collection<Schema extends ItemBase = ItemBase> {
     name: string;
-    private _items: Map<Index, CellaItem> = new Map();
+    private _items: Map<Index, Item<Schema>> = new Map();
     private _onUpdate: PersistFn;
 
     constructor(name: string, onUpdate: PersistFn) {
@@ -48,18 +65,18 @@ export class Collection {
         this._onUpdate = onUpdate;
     }
 
-    private _validateInsert(item: CellaItem) {
+    private _validateInsert(item: Item<Schema>) {
         const idIsValid =
-            itemHasProp(item, "id", "string") ||
-            itemHasProp(item, "id", "number");
+            itemHasProp(item, "_id", "string") ||
+            itemHasProp(item, "_id", "number");
         if (!idIsValid) {
             throw new Error(
                 `InsertionError: The id of an item must be a number or a string.`
             );
         }
-        if (this._items.has(item.id)) {
+        if (this._items.has(item._id)) {
             throw new Error(
-                `InsertionError: The id '${item.id}' already exists in the '${this.name}' collection`
+                `InsertionError: The id '${item._id}' already exists in the '${this.name}' collection`
             );
         }
     }
@@ -67,19 +84,18 @@ export class Collection {
     /**Inserts an item into the collection and persists the changes
       @params {CellaItem} item - the item to add to the collection 
     **/
-    //#TODO: Return the inserted object or their id
-    async insert<T>(object: T, id?: Index) {
+    //#TODO: Return the inserted object or it's id
+    async insert<T extends object>(object: T, id?: Index) {
         if (id === undefined) {
             id = randomUUID();
         }
-        const item = { id, collection: this.name, data: object };
+        const item = { _id: id, ...object } as Item<Schema>;
         this._validateInsert(item);
-        this._items.set(item.id, item);
+        this._items.set(item._id, item);
         await this._onUpdate();
     }
 
-    //#TODO: Implement this;
-    get<T>(id: Index): CellaItem<T> | null {
+    get(id: Index): Item<Schema> | null {
         const item = this._items.get(id);
         if (item === undefined) {
             return null;
@@ -88,20 +104,24 @@ export class Collection {
     }
 
     //#TODO: Implement this;
-    query() {}
+    query(...predicates: Predicate[]): Item<Schema>[] {
+        return runQuery(this._items, ...predicates);
+    }
 
     //#TODO: Implement this;
     aggregate() {}
 
     /**Inserts an item into the collection but does not sync 
       the changes with the data on disk**/
-    insertNoSave<T>(item: CellaItem<T>) {
+
+    insertNoSave(item: Schema) {
         this._validateInsert(item);
-        this._items.set(item.id, item);
+        this._items.set(item._id, item);
+        item;
     }
 
     /** Returns all the items in a collection*/
-    all<T>(): CellaItem<T>[] {
+    all(): Schema[] {
         return Array.from(this._items.values());
     }
 
@@ -124,13 +144,13 @@ export class CellaStore {
         this.fPath = fPath;
     }
 
-    collections(collection: string): Collection {
+    collections<T extends ItemBase>(collection: string): Collection<T> {
         let ref = this._collections.get(collection);
         if (ref === undefined) {
             ref = new Collection(collection, this.persist);
             this._collections.set(collection, ref);
         }
-        return ref as Collection;
+        return ref as Collection<T>;
     }
 
     hasCollection(collection: string): boolean {
@@ -144,9 +164,16 @@ export class CellaStore {
     }
 
     serialize(): string {
-        let items: CellaItem[] = [];
+        let items: SerializedItem[] = [];
         for (let collection of this._collections.values()) {
-            items = [...items, ...collection.all()];
+            const serializedItems = collection
+                .all()
+                .map(({ _id, ...rest }) => ({
+                    _id,
+                    _collection: collection.name,
+                    ...rest,
+                }));
+            items = [...items, ...serializedItems];
         }
         return JSON.stringify(items);
     }
@@ -159,9 +186,9 @@ export class CellaStore {
     }
 }
 
-export function itemHasProp(
-    item: CellaItem,
-    prop: string,
+export function itemHasProp<T>(
+    item: T,
+    prop: keyof T,
     type: "number" | "string" | "object" | "undefined"
 ): boolean {
     const value = item[prop];
@@ -176,16 +203,16 @@ export function itemHasProp(
     return true;
 }
 
-export function validateCellaItem(item: CellaItem) {
+export function validateSerializedItem(item: SerializedItem) {
     //Empty string id
-    if (item.id === "") {
+    if (item._id === "") {
         throw new Error(
             `InvalidItemError: id must not be empty. item: ${JSON.stringify(
                 item
             )}`
         );
     }
-    if (item.collection === "") {
+    if (item._collection === "") {
         throw new Error(
             `InvalidItemError: collection name must not be empty. item: ${JSON.stringify(
                 item
@@ -193,10 +220,9 @@ export function validateCellaItem(item: CellaItem) {
         );
     }
     const isValid =
-        (itemHasProp(item, "id", "string") ||
-            itemHasProp(item, "id", "number")) &&
-        itemHasProp(item, "collection", "string") &&
-        itemHasProp(item, "data", "object");
+        (itemHasProp(item, "_id", "string") ||
+            itemHasProp(item, "_id", "number")) &&
+        itemHasProp(item, "_collection", "string");
     if (!isValid) {
         throw new Error(
             `InvalidItemError: The following item is missing props or has props of the wrong type: ${JSON.stringify(
@@ -207,7 +233,7 @@ export function validateCellaItem(item: CellaItem) {
 }
 
 export function buildStore(
-    storedData: CellaItem[],
+    storedData: SerializedItem[],
     storePath: string = ""
 ): CellaStore {
     const store = new CellaStore(storePath);
@@ -217,15 +243,16 @@ export function buildStore(
         );
     }
     storedData.forEach((item) => {
-        validateCellaItem(item);
-        const collection = store.collections(item.collection);
-        collection.insertNoSave(item);
+        validateSerializedItem(item);
+        const collection = store.collections(item._collection);
+        const { _id, _collection, ...data } = item;
+        collection.insertNoSave({ _id, ...data });
     });
     return store;
 }
 
 export function loadStoreFromFile(storePath: string): CellaStore {
-    let storedData: CellaItem[];
+    let storedData: SerializedItem[];
     storedData = JSON.parse(readFileSync(storePath, "utf8"));
     return buildStore(storedData, storePath);
 }

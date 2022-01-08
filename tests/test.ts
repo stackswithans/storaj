@@ -1,6 +1,6 @@
 import {
     itemHasProp,
-    validateCellaItem,
+    validateSerializedItem,
     buildStore,
     CellaStore,
     Collection,
@@ -14,30 +14,30 @@ runTests(
     test("itemHasProp works", () => {
         console.log();
         const item = {
-            id: "",
+            _id: "",
+            _collection: "",
         } as any;
-        assert.ok(itemHasProp(item, "id", "string"));
-        assert.deepStrictEqual(itemHasProp(item, "id", "number"), false);
-        assert.deepStrictEqual(itemHasProp(item, "queijo", "string"), false);
+        assert.ok(itemHasProp(item, "_id", "string"));
+        assert.deepStrictEqual(itemHasProp(item, "_id", "number"), false);
+        assert.deepStrictEqual(itemHasProp(item, "test2", "string"), false);
     }),
 
-    test("validateCellaItem accepts valid item", () => {
+    test("validateSerializedItem accepts valid item", () => {
         const item = {
-            id: "dinnkdossaqw",
-            collection: "somecollection",
-            data: {},
+            _id: "dinnkdossaqw",
+            _collection: "somecollection",
         };
-        validateCellaItem(item);
+        validateSerializedItem(item);
     }),
 
-    test("validateCellaItem raises exception on invalid item", () => {
+    test("validateSerializedItem raises exception on invalid item", () => {
         const item = {
             id: {},
             collection: "somecollection",
             data: {},
         } as any;
         assert.throws(
-            () => validateCellaItem(item),
+            () => validateSerializedItem(item),
             new Error(
                 `InvalidItemError: The following item is missing props or has props of the wrong type: ${JSON.stringify(
                     item
@@ -46,15 +46,15 @@ runTests(
         );
     }),
 
-    test("validateCellaItem raises exception on item with empty id string", () => {
+    test("validateSerializedItem raises exception on item with empty id string", () => {
         const item = {
-            id: "",
-            collection: "somecollection",
+            _id: "",
+            _collection: "somecollection",
             data: {},
         } as any;
 
         assert.throws(
-            () => validateCellaItem(item),
+            () => validateSerializedItem(item),
             new Error(
                 `InvalidItemError: id must not be empty. item: ${JSON.stringify(
                     item
@@ -63,15 +63,15 @@ runTests(
         );
     }),
 
-    test("validateCellaItem raises exception on item with empty collection name", () => {
+    test("validateSerializedItem raises exception on item with empty collection name", () => {
         const item = {
-            id: 1,
-            collection: "",
+            _id: 1,
+            _collection: "",
             data: {},
         } as any;
 
         assert.throws(
-            () => validateCellaItem(item),
+            () => validateSerializedItem(item),
             new Error(
                 `InvalidItemError: collection name must not be empty. item: ${JSON.stringify(
                     item
@@ -83,9 +83,8 @@ runTests(
     test("buildStore works on valid store schema", () => {
         const store = [
             {
-                id: 1,
-                collection: "messages",
-                data: {},
+                _id: 1,
+                _collection: "messages",
             },
         ];
 
@@ -177,8 +176,8 @@ runTests(
         assert.deepStrictEqual(
             serStore,
             JSON.stringify([
-                { id: 1, collection: "test", data: { message: "message1" } },
-                { id: 2, collection: "test", data: { message: "message2" } },
+                { _id: 1, _collection: "test", message: "message1" },
+                { _id: 2, _collection: "test", message: "message2" },
             ])
         );
     }),
@@ -200,14 +199,27 @@ runTests(
 
     test("Test Collection get works as expected", async () => {
         const store = new CellaStore();
-        const testCol = store.collections("test");
+        const testCol = store.collections<{
+            _id: number | string;
+            message: string;
+        }>("test");
         await testCol.insert({ message: "message1" }, 1);
         await testCol.insert({ message: "message2" }, 2);
 
         assert.notDeepStrictEqual(testCol.get(1), null);
-        assert.deepStrictEqual(testCol.get(1)?.data, { message: "message1" });
+        assert.deepStrictEqual(testCol.get(1)?.message, "message1");
         assert.notDeepStrictEqual(testCol.get(2), null);
-        assert.deepStrictEqual(testCol.get(2)?.data, { message: "message2" });
+        assert.deepStrictEqual(testCol.get(2)?.message, "message2");
         assert.deepStrictEqual(testCol.get(3), null);
+    }),
+
+    test("Test Collection query equality works", async () => {
+        const store = new CellaStore();
+        const testCol = store.collections("test");
+        await testCol.insert({ message: "message1" }, 1);
+        await testCol.insert({ message: "message2" }, 2);
+
+        const result = testCol.query({ id: 1 });
+        assert.deepStrictEqual(result.length, 1);
     })
 );

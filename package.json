@@ -6,7 +6,8 @@
   "scripts": {
     "test": "ts-node ./tests/test.ts",
     "build": "tsc",
-    "cli": "ts-node ./cli.ts"
+    "cli": "ts-node ./cli.ts", 
+    "check": "tsc --noEmit"
   },
   "keywords": [
     "storage",
