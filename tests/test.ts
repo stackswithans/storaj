@@ -9,6 +9,7 @@ import {
     processQuery,
     OPList,
     runMatcher,
+    op,
 } from "../src/main";
 import { test, runTests } from "./utils";
 import * as assert from "assert";
@@ -218,24 +219,6 @@ runTests(
         assert.deepStrictEqual(testCol.get(3), null);
     }),
 
-    test("Test Collection query equality works", async () => {
-        const store = new CellaStore();
-        const testCol = store.collections<{
-            _id: string | number;
-            message: string;
-        }>("test");
-        await testCol.insert({ message: "message1" }, 1);
-        await testCol.insert({ message: "message2" }, 2);
-
-        let result = testCol.query({ _id: 1 });
-        assert.deepStrictEqual(result.length, 1);
-        assert.deepStrictEqual(result[0].message, "message1");
-
-        result = testCol.query({ _id: 2 });
-        assert.deepStrictEqual(result.length, 1);
-        assert.deepStrictEqual(result[0].message, "message2");
-    }),
-
     test("Test buildMatcher  builds matcher correctly", async () => {
         let matcher = buildMatcher(1);
         assert.deepStrictEqual(matcher instanceof Matcher, true);
@@ -284,6 +267,21 @@ runTests(
         assert.deepStrictEqual(matcher.op, OPList.GTE);
     }),
 
+    test("Test op builds correct matchers", () => {
+        let matcher = op.eq(1);
+        assert.deepStrictEqual(matcher.op, OPList.EQ);
+        matcher = op.ne(1);
+        assert.deepStrictEqual(matcher.op, OPList.NE);
+        matcher = op.lt(1);
+        assert.deepStrictEqual(matcher.op, OPList.LT);
+        matcher = op.gt(1);
+        assert.deepStrictEqual(matcher.op, OPList.GT);
+        matcher = op.lte(1);
+        assert.deepStrictEqual(matcher.op, OPList.LTE);
+        matcher = op.gte(1);
+        assert.deepStrictEqual(matcher.op, OPList.GTE);
+    }),
+
     test("Test processQuery works as expected correctly", async () => {
         type Message = { _id: number | string; message: string };
         let q: Message = {
@@ -295,5 +293,23 @@ runTests(
         assert.deepStrictEqual(data.get("_id")?.value, 2);
         assert.deepStrictEqual(data.get("message")?.op, OPList.EQ);
         assert.deepStrictEqual(data.get("message")?.value, "hello");
+    }),
+
+    test("Test Collection query equality works", async () => {
+        const store = new CellaStore();
+        const testCol = store.collections<{
+            _id: string | number;
+            message: string;
+        }>("test");
+        await testCol.insert({ message: "message1" }, 1);
+        await testCol.insert({ message: "message2" }, 2);
+
+        let result = testCol.query({ _id: 1 });
+        assert.deepStrictEqual(result.length, 1);
+        assert.deepStrictEqual(result[0].message, "message1");
+
+        result = testCol.query({ _id: 2 });
+        assert.deepStrictEqual(result.length, 1);
+        assert.deepStrictEqual(result[0].message, "message2");
     })
 );

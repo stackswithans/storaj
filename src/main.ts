@@ -56,7 +56,6 @@ type Query<T extends ItemBase> = {
 
 type QueryData<T extends ItemBase> = Map<Partial<keyof T>, Matcher>;
 
-//TODO: Test new ops
 export enum OPList {
     EQ = 0,
     NE,
@@ -66,7 +65,7 @@ export enum OPList {
     LTE,
 }
 
-const op = {
+export const op = {
     eq: (value: QValues) => new Matcher(OPList.EQ, value),
     ne: (value: QValues) => new Matcher(OPList.NE, value),
     lt: (value: QValues) => new Matcher(OPList.LT, value),
