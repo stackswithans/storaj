@@ -6,6 +6,7 @@ import {
     CellaStore,
     Collection,
     Matcher,
+    processQuery,
     OPList,
     runMatcher,
 } from "../src/main";
@@ -253,5 +254,18 @@ runTests(
         assert.deepStrictEqual(runMatcher(matcher, 1), true);
         assert.deepStrictEqual(runMatcher(matcher, 2), false);
         assert.deepStrictEqual(matcher.op, OPList.EQ);
+    }),
+
+    test("Test processQuery works as expected correctly", async () => {
+        type Message = { _id: number | string; message: string };
+        let q: Message = {
+            _id: 2,
+            message: "hello",
+        };
+        const data = processQuery<Message>(q);
+        assert.deepStrictEqual(data.get("_id")?.op, OPList.EQ);
+        assert.deepStrictEqual(data.get("_id")?.value, 2);
+        assert.deepStrictEqual(data.get("message")?.op, OPList.EQ);
+        assert.deepStrictEqual(data.get("message")?.value, "hello");
     })
 );

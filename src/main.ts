@@ -83,7 +83,6 @@ export function buildMatcher(expression: QValues): Matcher {
     return new Matcher(OPList.EQ, expression);
 }
 
-//#TODO: Test this;
 export function runMatcher(matcher: Matcher, value: unknown): boolean {
     switch (matcher.op) {
         case OPList.EQ:
@@ -92,7 +91,7 @@ export function runMatcher(matcher: Matcher, value: unknown): boolean {
     return false;
 }
 
-function processQuery<T extends ItemBase>(q: Query<T>): QueryData<T> {
+export function processQuery<T extends ItemBase>(q: Query<T>): QueryData<T> {
     const queryData: QueryData<T> = new Map();
     for (let field in q) {
         queryData.set(field, buildMatcher(q[field] as QValues));
