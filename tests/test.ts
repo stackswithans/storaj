@@ -215,11 +215,19 @@ runTests(
 
     test("Test Collection query equality works", async () => {
         const store = new CellaStore();
-        const testCol = store.collections("test");
+        const testCol = store.collections<{
+            _id: string | number;
+            message: string;
+        }>("test");
         await testCol.insert({ message: "message1" }, 1);
         await testCol.insert({ message: "message2" }, 2);
 
-        const result = testCol.query({ id: 1 });
+        let result = testCol.query({ _id: 1 });
         assert.deepStrictEqual(result.length, 1);
+        assert.deepStrictEqual(result[0].message, "message1");
+
+        result = testCol.query({ _id: 2 });
+        assert.deepStrictEqual(result.length, 1);
+        assert.deepStrictEqual(result[0].message, "message2");
     })
 );

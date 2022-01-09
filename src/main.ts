@@ -24,7 +24,12 @@ Two types of objects:
     id: op.ne(1), 
     message: op.ne(1), 
   }, { id: 2 });
+  
+  { id: 1 }
 
+
+  Matcher(field, operator, value), 
+  testMatcher
 */
 
 type ItemBase = { _id: Index };
@@ -43,15 +48,76 @@ type Index = string | number;
 
 type PersistFn = () => Promise<void>;
 
-interface Predicate {
-    [field: string]: string | number;
+type QValues<T> = string | number | null | Matcher<T>;
+
+type Query<T extends ItemBase> = {
+    [field in keyof T]?: QValues<T>;
+};
+
+type QueryData<T extends ItemBase> = Map<Partial<keyof T>, Matcher<T>>;
+
+enum OPList {
+    EQ = 0,
+    NOTEQ,
 }
 
-function runQuery<T extends ItemBase>(
+class Matcher<T> {
+    field: keyof T;
+    op: OPList;
+    value: QValues<T>;
+
+    constructor(field: keyof T, op: OPList, value: QValues<T>) {
+        this.field = field;
+        this.op = op;
+        this.value = value;
+    }
+}
+
+function buildMatcher<T>(field: keyof T, matcher: QValues<T>): Matcher<T> {
+    if (typeof matcher === undefined) {
+        //Should never be undefined because all the fields are in the query
+        throw new Error("A matcher should not be undefined.");
+    }
+    if (matcher instanceof Matcher) {
+        //Already a matcher, no need to do anything
+        return matcher;
+    }
+    return new Matcher(field, OPList.EQ, matcher);
+}
+
+function testMatcher<T>(matcher: Matcher<T>, value: unknown): boolean {
+    switch (matcher.op) {
+        case OPList.EQ:
+            return value === matcher.value;
+    }
+    return false;
+}
+
+function processQuery<T extends ItemBase>(q: Query<T>): QueryData<T> {
+    const queryData: QueryData<T> = new Map();
+    for (let field in q) {
+        queryData.set(field, buildMatcher(field, q[field] as QValues<T>));
+    }
+    return queryData;
+}
+
+function executeQuery<T extends ItemBase>(
     items: Map<Index, Item<T>>,
-    ...predicates: Predicate[]
+    query: QueryData<T>
 ): Item<T>[] {
     const resultSet: Item<T>[] = [];
+    for (let item of items.values()) {
+        let satisfiesQuery = true;
+        for (let [field, matcher] of query.entries()) {
+            const matcherResult = testMatcher<T>(matcher, item[field]);
+            if (!matcherResult) {
+                satisfiesQuery = false;
+                break;
+            }
+            satisfiesQuery &&= testMatcher(matcher, item[field]);
+        }
+        if (satisfiesQuery) resultSet.push(item);
+    }
     return resultSet;
 }
 
@@ -104,8 +170,9 @@ export class Collection<Schema extends ItemBase = ItemBase> {
     }
 
     //#TODO: Implement this;
-    query(...predicates: Predicate[]): Item<Schema>[] {
-        return runQuery(this._items, ...predicates);
+    query(q: Query<Schema>): Item<Schema>[] {
+        const queryData = processQuery(q);
+        return executeQuery(this._items, queryData);
     }
 
     //#TODO: Implement this;
