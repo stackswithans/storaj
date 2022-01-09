@@ -56,10 +56,24 @@ type Query<T extends ItemBase> = {
 
 type QueryData<T extends ItemBase> = Map<Partial<keyof T>, Matcher>;
 
+//TODO: Test new ops
 export enum OPList {
     EQ = 0,
-    NOTEQ,
+    NE,
+    LT,
+    GT,
+    GTE,
+    LTE,
 }
+
+const op = {
+    eq: (value: QValues) => new Matcher(OPList.EQ, value),
+    ne: (value: QValues) => new Matcher(OPList.NE, value),
+    lt: (value: QValues) => new Matcher(OPList.LT, value),
+    gt: (value: QValues) => new Matcher(OPList.GT, value),
+    gte: (value: QValues) => new Matcher(OPList.GTE, value),
+    lte: (value: QValues) => new Matcher(OPList.LTE, value),
+};
 
 export class Matcher {
     op: OPList;
@@ -83,12 +97,21 @@ export function buildMatcher(expression: QValues): Matcher {
     return new Matcher(OPList.EQ, expression);
 }
 
-export function runMatcher(matcher: Matcher, value: unknown): boolean {
+export function runMatcher(matcher: Matcher, value: any): boolean {
     switch (matcher.op) {
         case OPList.EQ:
             return value === matcher.value;
+        case OPList.NE:
+            return value !== matcher.value;
+        case OPList.LT:
+            return value < (matcher.value as any);
+        case OPList.GT:
+            return value > (matcher.value as any);
+        case OPList.LTE:
+            return value <= (matcher.value as any);
+        case OPList.GTE:
+            return value >= (matcher.value as any);
     }
-    return false;
 }
 
 export function processQuery<T extends ItemBase>(q: Query<T>): QueryData<T> {

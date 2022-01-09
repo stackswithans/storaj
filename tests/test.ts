@@ -254,6 +254,34 @@ runTests(
         assert.deepStrictEqual(runMatcher(matcher, 1), true);
         assert.deepStrictEqual(runMatcher(matcher, 2), false);
         assert.deepStrictEqual(matcher.op, OPList.EQ);
+
+        matcher = new Matcher(OPList.NE, "test");
+        assert.deepStrictEqual(runMatcher(matcher, "test"), false);
+        assert.deepStrictEqual(runMatcher(matcher, "test1"), true);
+        assert.deepStrictEqual(matcher.op, OPList.NE);
+
+        matcher = new Matcher(OPList.LT, 1);
+        assert.deepStrictEqual(runMatcher(matcher, 2), false);
+        assert.deepStrictEqual(runMatcher(matcher, 1), false);
+        assert.deepStrictEqual(runMatcher(matcher, 0), true);
+        assert.deepStrictEqual(matcher.op, OPList.LT);
+
+        matcher = new Matcher(OPList.LTE, 1);
+        assert.deepStrictEqual(runMatcher(matcher, 1), true);
+        assert.deepStrictEqual(runMatcher(matcher, 0), true);
+        assert.deepStrictEqual(runMatcher(matcher, 3), false);
+        assert.deepStrictEqual(matcher.op, OPList.LTE);
+
+        matcher = new Matcher(OPList.GT, 1);
+        assert.deepStrictEqual(runMatcher(matcher, 1), false);
+        assert.deepStrictEqual(runMatcher(matcher, 2), true);
+        assert.deepStrictEqual(matcher.op, OPList.GT);
+
+        matcher = new Matcher(OPList.GTE, 1);
+        assert.deepStrictEqual(runMatcher(matcher, 1), true);
+        assert.deepStrictEqual(runMatcher(matcher, 2), true);
+        assert.deepStrictEqual(runMatcher(matcher, 0), false);
+        assert.deepStrictEqual(matcher.op, OPList.GTE);
     }),
 
     test("Test processQuery works as expected correctly", async () => {
