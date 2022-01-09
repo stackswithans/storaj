@@ -7,6 +7,7 @@ import {
     Collection,
     Matcher,
     OPList,
+    runMatcher,
 } from "../src/main";
 import { test, runTests } from "./utils";
 import * as assert from "assert";
@@ -235,14 +236,22 @@ runTests(
     }),
 
     test("Test buildMatcher  builds matcher correctly", async () => {
-        let matcher = buildMatcher("_id", 1);
+        let matcher = buildMatcher(1);
         assert.deepStrictEqual(matcher instanceof Matcher, true);
         assert.deepStrictEqual(matcher.op, OPList.EQ);
 
-        matcher = buildMatcher("_id", new Matcher("_id", OPList.EQ, 1));
+        matcher = buildMatcher(new Matcher(OPList.EQ, 1));
         assert.deepStrictEqual(matcher instanceof Matcher, true);
         assert.deepStrictEqual(matcher.op, OPList.EQ);
+        assert.deepStrictEqual(matcher.value, 1);
 
-        assert.throws(() => buildMatcher("_id", undefined as any));
+        assert.throws(() => buildMatcher(undefined as any));
+    }),
+
+    test("Test runMatcher works as expected correctly", async () => {
+        let matcher = new Matcher(OPList.EQ, 1);
+        assert.deepStrictEqual(runMatcher(matcher, 1), true);
+        assert.deepStrictEqual(runMatcher(matcher, 2), false);
+        assert.deepStrictEqual(matcher.op, OPList.EQ);
     })
 );

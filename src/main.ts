@@ -29,7 +29,7 @@ Two types of objects:
 
 
   Matcher(field, operator, value), 
-  testMatcher
+  runMatcher
 */
 
 type ItemBase = { _id: Index };
@@ -48,48 +48,43 @@ type Index = string | number;
 
 type PersistFn = () => Promise<void>;
 
-type QValues<T> = string | number | null | Matcher<T>;
+type QValues = string | number | null | Matcher;
 
 type Query<T extends ItemBase> = {
-    [field in keyof T]?: QValues<T>;
+    [field in keyof T]?: QValues;
 };
 
-type QueryData<T extends ItemBase> = Map<Partial<keyof T>, Matcher<T>>;
+type QueryData<T extends ItemBase> = Map<Partial<keyof T>, Matcher>;
 
 export enum OPList {
     EQ = 0,
     NOTEQ,
 }
 
-export class Matcher<T> {
-    field: keyof T;
+export class Matcher {
     op: OPList;
-    value: QValues<T>;
+    value: QValues;
 
-    constructor(field: keyof T, op: OPList, value: QValues<T>) {
-        this.field = field;
+    constructor(op: OPList, value: QValues) {
         this.op = op;
         this.value = value;
     }
 }
 
-export function buildMatcher<T>(
-    field: keyof T,
-    matcher: QValues<T>
-): Matcher<T> {
-    if (typeof matcher === "undefined") {
+export function buildMatcher(expression: QValues): Matcher {
+    if (typeof expression === "undefined") {
         //Should never be undefined because all the fields are in the query
-        throw new Error("A matcher should not be undefined.");
+        throw new Error("A expression should not be undefined.");
     }
-    if (matcher instanceof Matcher) {
-        //Already a matcher, no need to do anything
-        return matcher;
+    if (expression instanceof Matcher) {
+        //Already a expression, no need to do anything
+        return expression;
     }
-    return new Matcher(field, OPList.EQ, matcher);
+    return new Matcher(OPList.EQ, expression);
 }
 
 //#TODO: Test this;
-function testMatcher<T>(matcher: Matcher<T>, value: unknown): boolean {
+export function runMatcher(matcher: Matcher, value: unknown): boolean {
     switch (matcher.op) {
         case OPList.EQ:
             return value === matcher.value;
@@ -100,7 +95,7 @@ function testMatcher<T>(matcher: Matcher<T>, value: unknown): boolean {
 function processQuery<T extends ItemBase>(q: Query<T>): QueryData<T> {
     const queryData: QueryData<T> = new Map();
     for (let field in q) {
-        queryData.set(field, buildMatcher(field, q[field] as QValues<T>));
+        queryData.set(field, buildMatcher(q[field] as QValues));
     }
     return queryData;
 }
@@ -114,12 +109,12 @@ function executeQuery<T extends ItemBase>(
     for (let item of items.values()) {
         let satisfiesQuery = true;
         for (let [field, matcher] of query.entries()) {
-            const matcherResult = testMatcher<T>(matcher, item[field]);
+            const matcherResult = runMatcher(matcher, item[field]);
             if (!matcherResult) {
                 satisfiesQuery = false;
                 break;
             }
-            satisfiesQuery &&= testMatcher(matcher, item[field]);
+            satisfiesQuery &&= runMatcher(matcher, item[field]);
         }
         if (satisfiesQuery) resultSet.push(item);
     }
