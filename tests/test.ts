@@ -1,9 +1,12 @@
 import {
     itemHasProp,
     validateSerializedItem,
+    buildMatcher,
     buildStore,
     CellaStore,
     Collection,
+    Matcher,
+    OPList,
 } from "../src/main";
 import { test, runTests } from "./utils";
 import * as assert from "assert";
@@ -229,5 +232,17 @@ runTests(
         result = testCol.query({ _id: 2 });
         assert.deepStrictEqual(result.length, 1);
         assert.deepStrictEqual(result[0].message, "message2");
+    }),
+
+    test("Test buildMatcher  builds matcher correctly", async () => {
+        let matcher = buildMatcher("_id", 1);
+        assert.deepStrictEqual(matcher instanceof Matcher, true);
+        assert.deepStrictEqual(matcher.op, OPList.EQ);
+
+        matcher = buildMatcher("_id", new Matcher("_id", OPList.EQ, 1));
+        assert.deepStrictEqual(matcher instanceof Matcher, true);
+        assert.deepStrictEqual(matcher.op, OPList.EQ);
+
+        assert.throws(() => buildMatcher("_id", undefined as any));
     })
 );

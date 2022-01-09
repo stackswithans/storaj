@@ -56,12 +56,12 @@ type Query<T extends ItemBase> = {
 
 type QueryData<T extends ItemBase> = Map<Partial<keyof T>, Matcher<T>>;
 
-enum OPList {
+export enum OPList {
     EQ = 0,
     NOTEQ,
 }
 
-class Matcher<T> {
+export class Matcher<T> {
     field: keyof T;
     op: OPList;
     value: QValues<T>;
@@ -73,8 +73,11 @@ class Matcher<T> {
     }
 }
 
-function buildMatcher<T>(field: keyof T, matcher: QValues<T>): Matcher<T> {
-    if (typeof matcher === undefined) {
+export function buildMatcher<T>(
+    field: keyof T,
+    matcher: QValues<T>
+): Matcher<T> {
+    if (typeof matcher === "undefined") {
         //Should never be undefined because all the fields are in the query
         throw new Error("A matcher should not be undefined.");
     }
@@ -85,6 +88,7 @@ function buildMatcher<T>(field: keyof T, matcher: QValues<T>): Matcher<T> {
     return new Matcher(field, OPList.EQ, matcher);
 }
 
+//#TODO: Test this;
 function testMatcher<T>(matcher: Matcher<T>, value: unknown): boolean {
     switch (matcher.op) {
         case OPList.EQ:
@@ -101,6 +105,7 @@ function processQuery<T extends ItemBase>(q: Query<T>): QueryData<T> {
     return queryData;
 }
 
+//#TODO: Test this;
 function executeQuery<T extends ItemBase>(
     items: Map<Index, Item<T>>,
     query: QueryData<T>
@@ -169,7 +174,7 @@ export class Collection<Schema extends ItemBase = ItemBase> {
         return item;
     }
 
-    //#TODO: Implement this;
+    //#TODO: Test this;
     query(q: Query<Schema>): Item<Schema>[] {
         const queryData = processQuery(q);
         return executeQuery(this._items, queryData);
@@ -180,7 +185,6 @@ export class Collection<Schema extends ItemBase = ItemBase> {
 
     /**Inserts an item into the collection but does not sync 
       the changes with the data on disk**/
-
     insertNoSave(item: Schema) {
         this._validateInsert(item);
         this._items.set(item._id, item);
