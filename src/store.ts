@@ -4,36 +4,6 @@ import { randomUUID } from "crypto";
 import { ItemBase, Item, Index } from "./types";
 import { Query, executeQuery } from "./query";
 //TODO: Add doc comments
-/*
-
-Collection contains CelloObjects
-
-Collection Messages:
-- { content: 'oi', from: 'guy', to: 'other guy'};
-- { content: 'tás bom?!', from: 'other guy', to: 'guy'};
-
-
-Two types of objects:
- - Collection;
- - CellaItem (actual Data);
-
-
- - Can't have an item without a collection
-
-
- Querying the store:
-
-  store.collections("message").query({
-    id: op.ne(1), 
-    message: op.ne(1), 
-  }, { id: 2 });
-  
-  { id: 1 }
-
-
-  Matcher(field, operator, value), 
-  runMatcher
-*/
 type SerializedBase = { _id: Index; _collection: string };
 
 type SerializedItem<T extends SerializedBase = SerializedBase> = {
