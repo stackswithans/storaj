@@ -20,7 +20,7 @@ var __rest = (this && this.__rest) || function (s, e) {
     return t;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.storeFromFile = exports.storeFromObject = exports.validateSerializedItem = exports.itemHasProp = exports.CellaStore = exports.Collection = void 0;
+exports.storeFromFile = exports.storeFromObject = exports.validateSerializedItem = exports.itemHasProp = exports.Store = exports.Collection = void 0;
 const promises_1 = require("fs/promises");
 const fs_1 = require("fs");
 const crypto_1 = require("crypto");
@@ -76,7 +76,7 @@ class Collection {
     }
 }
 exports.Collection = Collection;
-class CellaStore {
+class Store {
     constructor(fPath = "") {
         this._collections = new Map();
         this.fPath = fPath;
@@ -117,7 +117,7 @@ class CellaStore {
         });
     }
 }
-exports.CellaStore = CellaStore;
+exports.Store = Store;
 function itemHasProp(item, prop, type) {
     const value = item[prop];
     if (value === undefined) {
@@ -146,7 +146,7 @@ function validateSerializedItem(item) {
 }
 exports.validateSerializedItem = validateSerializedItem;
 function storeFromObject(storedData, storePath = "") {
-    const store = new CellaStore(storePath);
+    const store = new Store(storePath);
     if (!(storedData instanceof Array)) {
         throw new Error("Invalid schema passed to function. Argument must be an array of objects");
     }

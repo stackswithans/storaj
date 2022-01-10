@@ -115,7 +115,7 @@ export class Collection<Schema extends ItemBase = ItemBase> {
     }
 }
 
-export class CellaStore {
+export class Store {
     /**@property fPath - Path to the file where the data should be persisted*/
     readonly fPath: string;
     readonly _collections: Map<string | number, Collection> = new Map();
@@ -221,8 +221,8 @@ export function validateSerializedItem(item: SerializedItem) {
 export function storeFromObject(
     storedData: SerializedItem[],
     storePath: string = ""
-): CellaStore {
-    const store = new CellaStore(storePath);
+): Store {
+    const store = new Store(storePath);
     if (!(storedData instanceof Array)) {
         throw new Error(
             "Invalid schema passed to function. Argument must be an array of objects"
@@ -237,7 +237,7 @@ export function storeFromObject(
     return store;
 }
 
-export function storeFromFile(storePath: string): CellaStore {
+export function storeFromFile(storePath: string): Store {
     let storedData: SerializedItem[];
     storedData = JSON.parse(readFileSync(storePath, "utf8"));
     return storeFromObject(storedData, storePath);

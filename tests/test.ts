@@ -2,7 +2,7 @@ import {
     itemHasProp,
     validateSerializedItem,
     storeFromObject,
-    CellaStore,
+    Store,
     Collection,
 } from "../src/store";
 import {
@@ -97,7 +97,7 @@ runTests(
         ];
 
         const cellaStore = storeFromObject(store);
-        assert.ok(cellaStore instanceof CellaStore);
+        assert.ok(cellaStore instanceof Store);
         assert.ok(cellaStore.hasCollection("messages"));
         assert.deepStrictEqual(cellaStore.collNames()[0], "messages");
         assert.ok(cellaStore.collections("messages") instanceof Collection);
@@ -114,8 +114,8 @@ runTests(
         );
     }),
 
-    test("CellaStore collections creates new collection if not exists", () => {
-        const store = new CellaStore();
+    test("Store collections creates new collection if not exists", () => {
+        const store = new Store();
         assert.deepStrictEqual(
             store.hasCollection("test"),
             false,
@@ -129,8 +129,8 @@ runTests(
         );
     }),
 
-    test("CellaStore collNames returns collection names", () => {
-        const store = new CellaStore();
+    test("Store collNames returns collection names", () => {
+        const store = new Store();
         store.collections("test");
         store.collections("test2");
         store.collections("test3");
@@ -138,7 +138,7 @@ runTests(
     }),
 
     test("Test collection insert works", async () => {
-        const store = new CellaStore();
+        const store = new Store();
         const testCol = store.collections("test");
         await testCol.insert({ message: "message1" });
         assert.deepStrictEqual(testCol.count(), 1);
@@ -151,7 +151,7 @@ runTests(
     }),
 
     test("Test collection insert fails with id of wrong type", async () => {
-        const store = new CellaStore();
+        const store = new Store();
         const testCol = store.collections("test");
         await assert.rejects(
             async () =>
@@ -163,7 +163,7 @@ runTests(
     }),
 
     test("Test collection insert fails with existing id", async () => {
-        const store = new CellaStore();
+        const store = new Store();
         const testCol = store.collections("test");
         await testCol.insert({ message: "message1" }, 2);
         await assert.rejects(
@@ -174,8 +174,8 @@ runTests(
         );
     }),
 
-    test("Test CellaStore serialize works correctly", async () => {
-        const store = new CellaStore();
+    test("Test Store serialize works correctly", async () => {
+        const store = new Store();
         const testCol = store.collections("test");
         await testCol.insert({ message: "message1" }, 1);
         await testCol.insert({ message: "message2" }, 2);
@@ -190,9 +190,9 @@ runTests(
         );
     }),
 
-    test("Test CellaStore persist saves file if path given", async () => {
+    test("Test Store persist saves file if path given", async () => {
         const filePath = "test.json";
-        const store = new CellaStore(filePath);
+        const store = new Store(filePath);
         const testCol = store.collections("test");
         await testCol.insert({ message: "message1" }, 1);
         await testCol.insert({ message: "message2" }, 2);
@@ -206,7 +206,7 @@ runTests(
     }),
 
     test("Test Collection get works as expected", async () => {
-        const store = new CellaStore();
+        const store = new Store();
         const testCol = store.collections<{
             _id: number | string;
             message: string;
@@ -298,7 +298,7 @@ runTests(
     }),
 
     test("Test Collection query equality works", async () => {
-        const store = new CellaStore();
+        const store = new Store();
         const testCol = store.collections<{
             _id: string | number;
             message: string;
@@ -316,7 +316,7 @@ runTests(
     }),
 
     test("Test Collection complex queries wok", async () => {
-        const store = new CellaStore();
+        const store = new Store();
         const collRef = store.collections<{
             _id: string | number;
             age: number;

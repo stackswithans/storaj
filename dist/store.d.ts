@@ -22,7 +22,7 @@ export declare class Collection<Schema extends ItemBase = ItemBase> {
     all(): Schema[];
     count(): number;
 }
-export declare class CellaStore {
+export declare class Store {
     readonly fPath: string;
     readonly _collections: Map<string | number, Collection>;
     constructor(fPath?: string);
@@ -34,6 +34,6 @@ export declare class CellaStore {
 }
 export declare function itemHasProp<T>(item: T, prop: keyof T, type: "number" | "string" | "object" | "undefined"): boolean;
 export declare function validateSerializedItem(item: SerializedItem): void;
-export declare function storeFromObject(storedData: SerializedItem[], storePath?: string): CellaStore;
-export declare function storeFromFile(storePath: string): CellaStore;
+export declare function storeFromObject(storedData: SerializedItem[], storePath?: string): Store;
+export declare function storeFromFile(storePath: string): Store;
 export {};
