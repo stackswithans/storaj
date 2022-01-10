@@ -1,16 +1,18 @@
 import {
     itemHasProp,
     validateSerializedItem,
-    buildMatcher,
-    buildStore,
+    storeFromObject,
     CellaStore,
     Collection,
+} from "../src/store";
+import {
+    buildMatcher,
     Matcher,
     processQuery,
     OPList,
     runMatcher,
     op,
-} from "../src/main";
+} from "../src/query";
 import { test, runTests } from "./utils";
 import * as assert from "assert";
 import { readFileSync } from "fs";
@@ -86,7 +88,7 @@ runTests(
         );
     }),
 
-    test("buildStore works on valid store schema", () => {
+    test("storeFromObject works on valid store schema", () => {
         const store = [
             {
                 _id: 1,
@@ -94,18 +96,18 @@ runTests(
             },
         ];
 
-        const cellaStore = buildStore(store);
+        const cellaStore = storeFromObject(store);
         assert.ok(cellaStore instanceof CellaStore);
         assert.ok(cellaStore.hasCollection("messages"));
-        assert.deepStrictEqual(cellaStore.colNames()[0], "messages");
+        assert.deepStrictEqual(cellaStore.collNames()[0], "messages");
         assert.ok(cellaStore.collections("messages") instanceof Collection);
         assert.deepStrictEqual(cellaStore.collections("messages").count(), 1);
     }),
 
-    test("buildStore fails with non-list argument", () => {
+    test("storeFromObject fails with non-list argument", () => {
         const store = {} as any;
         assert.throws(
-            () => buildStore(store),
+            () => storeFromObject(store),
             new Error(
                 "Invalid schema passed to function. Argument must be an array of objects"
             )
@@ -127,12 +129,12 @@ runTests(
         );
     }),
 
-    test("CellaStore colNames returns collection names", () => {
+    test("CellaStore collNames returns collection names", () => {
         const store = new CellaStore();
         store.collections("test");
         store.collections("test2");
         store.collections("test3");
-        assert.deepStrictEqual(store.colNames(), ["test", "test2", "test3"]);
+        assert.deepStrictEqual(store.collNames(), ["test", "test2", "test3"]);
     }),
 
     test("Test collection insert works", async () => {
