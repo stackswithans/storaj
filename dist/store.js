@@ -165,4 +165,3 @@ function storeFromFile(storePath) {
     return storeFromObject(storedData, storePath);
 }
 exports.storeFromFile = storeFromFile;
-//# sourceMappingURL=store.js.map

@@ -7,4 +7,3 @@ Object.defineProperty(exports, "storeFromFile", { enumerable: true, get: functio
 Object.defineProperty(exports, "storeFromObject", { enumerable: true, get: function () { return store_1.storeFromObject; } });
 const query_1 = require("./query");
 Object.defineProperty(exports, "op", { enumerable: true, get: function () { return query_1.op; } });
-//# sourceMappingURL=main.js.map
