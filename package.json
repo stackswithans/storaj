@@ -1,8 +1,10 @@
 {
-  "name": "cella",
-  "version": "1.0.0",
-  "description": "A simple lightweight JSON storage library",
+  "name": "storaj",
+  "version": "0.8.0",
+  "description": "A simple lightweight object storage library",
   "main": "./dist/main.js",
+  "types": "./dist/main.d.ts", 
+  "homepage":"https://github.com/stackswithans/storaj", 
   "scripts": {
     "test": "ts-node ./tests/test.ts",
     "build": "tsc",
@@ -12,12 +14,12 @@
   "keywords": [
     "storage",
     "database",
-    "db",
     "library",
-    "store"
+    "in-memory store", 
+    "backend"
   ],
   "author": "stackwithans",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@types/node": "^17.0.8",
     "ts-node": "^10.4.0",
