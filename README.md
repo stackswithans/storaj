@@ -1,3 +1,3 @@
-# Cella - The Simple JSON Store
+# Cella - A Simple JSON Store
 
-A Simple lightweight interface for storing json files
+A Simple lightweight library for storing and querying JSON objects.
