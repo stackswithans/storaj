@@ -9,7 +9,8 @@
     "test": "ts-node ./tests/test.ts",
     "build": "tsc",
     "cli": "ts-node ./cli.ts", 
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit", 
+    "prepare":"npm run test && npm run build"
   },
   "keywords": [
     "storage",
