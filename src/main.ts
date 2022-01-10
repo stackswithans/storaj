@@ -110,6 +110,8 @@ export function runMatcher(matcher: Matcher, value: any): boolean {
             return value <= (matcher.value as any);
         case OPList.GTE:
             return value >= (matcher.value as any);
+        default:
+            throw new Error("Non exhaustive op matching");
     }
 }
 
@@ -135,7 +137,7 @@ function executeQuery<T extends ItemBase>(
                 satisfiesQuery = false;
                 break;
             }
-            satisfiesQuery &&= runMatcher(matcher, item[field]);
+            satisfiesQuery = satisfiesQuery && matcherResult;
         }
         if (satisfiesQuery) resultSet.push(item);
     }
@@ -172,7 +174,7 @@ export class Collection<Schema extends ItemBase = ItemBase> {
       @params {CellaItem} item - the item to add to the collection 
     **/
     //#TODO: Return the inserted object or it's id
-    async insert<T extends object>(object: T, id?: Index) {
+    async insert(object: Omit<Schema, "_id">, id?: Index) {
         if (id === undefined) {
             id = randomUUID();
         }

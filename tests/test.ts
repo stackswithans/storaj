@@ -311,5 +311,34 @@ runTests(
         result = testCol.query({ _id: 2 });
         assert.deepStrictEqual(result.length, 1);
         assert.deepStrictEqual(result[0].message, "message2");
+    }),
+
+    test("Test Collection complex queries wok", async () => {
+        const store = new CellaStore();
+        const collRef = store.collections<{
+            _id: string | number;
+            age: number;
+            school: string;
+            sex: string;
+        }>("test");
+        await collRef.insert({ age: 10, school: "randomSchool", sex: "M" }, 1);
+        await collRef.insert({ age: 22, school: "randomUni", sex: "M" }, 2);
+        await collRef.insert({ age: 24, school: "randomUni", sex: "F" }, 3);
+
+        let result = collRef.query({ age: op.gt(10) });
+        assert.deepStrictEqual(result.length, 2);
+        result = collRef.query({ age: op.gt(10), sex: "F" });
+        assert.deepStrictEqual(result.length, 1);
+        assert.deepStrictEqual(result[0].sex, "F");
+        assert.deepStrictEqual(result[0].age, 24);
+        result = collRef.query({ age: op.lt(24), sex: "M" });
+        assert.deepStrictEqual(result.length, 2);
+        result = collRef.query({
+            age: op.lt(24),
+            sex: "M",
+            school: "randomSchool",
+        });
+        assert.deepStrictEqual(result.length, 1);
+        assert.deepStrictEqual(result[0]._id, 1);
     })
 );
