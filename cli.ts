@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import { createInterface } from "readline";
-import { loadCellaStore, CellaStore } from "./src/main";
+import { storeFromFile, CellaStore } from "./src/main";
 
 function main() {
     let store: CellaStore;
     try {
-        store = loadCellaStore(process.argv[2]);
+        store = storeFromFile(process.argv[2]);
     } catch (err) {
         console.log("An error has ocurred while trying to read the database");
         process.exit(1);
@@ -22,7 +22,7 @@ function main() {
 function runCmd(cmd: string, store: CellaStore): void {
     switch (cmd) {
         case "collections": {
-            store.colNames().forEach((value) => console.log(value));
+            store.collNames().forEach((value) => console.log(value));
         }
         default:
             console.error("Comando inexistente, tenta de novo!.\n\n");
