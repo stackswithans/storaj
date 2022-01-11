@@ -1,5 +1,5 @@
 # Storaj  
-Storaj (warehouse in latin) is a simple and lightweight server-side library for storing and querying javascript objects in memory.
+Storaj is a simple and lightweight server-side library for storing and querying javascript objects in memory.
 It can be used as lightweight database for small projects with data storage requirements. A store is made up of groups known as collections,
 collections contain objects, and can be queried to get objects that meet certain conditions. Some of the features include:
 
@@ -115,22 +115,28 @@ interface TodoI extends ItemDefault {
 }
 
 todos = store.collections<TodoI>("todos");
-//## The `get` method of a collection can be used to get an item by id;
 let todo = todos.get("new todo");
+
+//Do something with 'todo'
 console.log(todo.desc);
 ```
 
-The `query` method can be used to get a set of items based on the value of chosen fields;
+The `query` method can be used to get a set of items based on the value of chosen fields:
 ```Typescript
-let results = todos.query({ desc: "new todo" }); // Returns all todos that have desc == "new todo";
+// Returns all todos that have desc == "new todo"
+let results = todos.query({ desc: "new todo" });
+```
 
-//Adding more fields to the query object will result in an "AND" clause.
-results = todos.query({ desc: "new todo", dueDate: "25-08-2021" }); //Returns all todos that have desc == "new todo" and dueDate == "25-08-2021";
+Adding more fields to the query object will result in an "AND" clause:
+```typescript
+//Returns all todos that have desc == "new todo" and dueDate == "25-08-2021"
+results = todos.query({ desc: "new todo", dueDate: "25-08-2021" }); 
 
 //Do something with the array of results
 results.forEach((todo) => console.log(todo.desc));
 ```
-Queries can also contain operators to express conditions other than equality: 
+Queries can also contain operators to express conditions other than equality 
+(Consult the API Section for the full list of query operators): 
 ```typescript
 import { queryOp } from "storaj";
 
