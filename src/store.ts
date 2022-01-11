@@ -13,6 +13,7 @@ export type SerializedDefault = SerializedItem<unknown>;
 
 type PersistFn = () => Promise<void>;
 
+//#TODO: Implement options for the persistance
 export class Collection<Schema extends ItemDefault = ItemDefault> {
     name: string;
     private _items: Map<Index, Item<Schema>> = new Map();
@@ -39,18 +40,28 @@ export class Collection<Schema extends ItemDefault = ItemDefault> {
         }
     }
 
-    /**Inserts an item into the collection and persists the changes
-      @params {CellaItem} item - the item to add to the collection 
-    **/
-    //#TODO: Return the inserted object or it's id
-    async insert(object: Omit<Schema, "_id">, id?: Index) {
+    private _putInMap(object: Omit<Schema, "_id">, id?: Index) {
         if (id === undefined) {
             id = randomUUID();
         }
         const item = { _id: id, ...object } as Item<Schema>;
         this._validateInsert(item);
         this._items.set(item._id, item);
+    }
+
+    /**Inserts an item into the collection and persists the changes
+      @params {CellaItem} item - the item to add to the collection 
+    **/
+    //#TODO: Return the inserted object or it's id
+    async insert(object: Omit<Schema, "_id">, id?: Index) {
+        this._putInMap(object, id);
         await this._onUpdate();
+    }
+
+    /**Inserts an item into the collection but does not sync 
+      the changes with the data on disk**/
+    insertSync(object: Omit<Schema, "_id">, id?: Index) {
+        this._putInMap(object, id);
     }
 
     get(id: Index): Item<Schema> | null {
@@ -65,13 +76,10 @@ export class Collection<Schema extends ItemDefault = ItemDefault> {
         return executeQuery(this._items, q);
     }
 
-    //#TODO: Implement options for the persistance
     aggregate() {}
 
-    /**Inserts an item into the collection but does not sync 
-      the changes with the data on disk**/
     //#TODO: Add same type as normal insert;
-    insertNoSave(item: Schema) {
+    _insertNoSave(item: Schema) {
         this._validateInsert(item);
         this._items.set(item._id, item);
         item;
@@ -206,7 +214,7 @@ export function storeFromObjects<T extends SerializedDefault>(
         validateSerializedItem(item);
         const collection = store.collections(item._collection);
         const { _id, _collection, ...data } = item;
-        collection.insertNoSave({ _id, ...data });
+        collection._insertNoSave({ _id, ...data });
     });
     return store;
 }

@@ -148,6 +148,9 @@ runTests(
 
         await testCol.insert({ message: "message3" }, "message-from-bae");
         assert.deepStrictEqual(testCol.count(), 3);
+
+        testCol.insertSync({ message: "message4" }, "message-from-bae2");
+        assert.deepStrictEqual(testCol.count(), 4);
     }),
 
     test("Test collection insert fails with id of wrong type", async () => {
@@ -156,6 +159,12 @@ runTests(
         await assert.rejects(
             async () =>
                 await testCol.insert({ message: "message1" }, [] as any),
+            new Error(
+                `InsertionError: The id of an item must be a number or a string.`
+            )
+        );
+        assert.throws(
+            () => testCol.insertSync({ message: "message1" }, [] as any),
             new Error(
                 `InsertionError: The id of an item must be a number or a string.`
             )
