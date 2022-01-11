@@ -1,5 +1,5 @@
 //TODO: Add doc comments
-import { ItemBase, Item, Index } from "./types";
+import { ItemDefault, Item, Index } from "./types";
 
 export class Matcher {
     op: OPList;
@@ -13,11 +13,11 @@ export class Matcher {
 
 type QValues = string | number | null | Matcher;
 
-export type Query<T extends ItemBase> = {
+export type Query<T extends ItemDefault> = {
     [field in keyof T]?: QValues;
 };
 
-type QueryData<T extends ItemBase> = Map<Partial<keyof T>, Matcher>;
+type QueryData<T extends ItemDefault> = Map<Partial<keyof T>, Matcher>;
 
 export enum OPList {
     EQ = 0,
@@ -68,7 +68,7 @@ export function runMatcher(matcher: Matcher, value: any): boolean {
     }
 }
 
-export function processQuery<T extends ItemBase>(q: Query<T>): QueryData<T> {
+export function processQuery<T extends ItemDefault>(q: Query<T>): QueryData<T> {
     const queryData: QueryData<T> = new Map();
     for (let field in q) {
         queryData.set(field, buildMatcher(q[field] as QValues));
@@ -76,7 +76,7 @@ export function processQuery<T extends ItemBase>(q: Query<T>): QueryData<T> {
     return queryData;
 }
 
-export function executeQuery<T extends ItemBase>(
+export function executeQuery<T extends ItemDefault>(
     items: Map<Index, Item<T>>,
     query: Query<T>
 ): Item<T>[] {

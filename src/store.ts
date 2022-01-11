@@ -1,18 +1,19 @@
 import { writeFile } from "fs/promises";
 import { readFileSync } from "fs";
 import { randomUUID } from "crypto";
-import { ItemBase, Item, Index } from "./types";
+import { ItemDefault, Item, Index } from "./types";
 import { Query, executeQuery } from "./query";
 //TODO: Add doc comments
-type SerializedBase = { _id: Index; _collection: string };
 
-type SerializedItem<T extends SerializedBase> = {
+export type SerializedItem<T> = {
     [Property in keyof T]: T[Property];
-};
+} & { _id: Index; _collection: string };
+
+type SerializedDefault = SerializedItem<unknown>;
 
 type PersistFn = () => Promise<void>;
 
-export class Collection<Schema extends ItemBase = ItemBase> {
+export class Collection<Schema extends ItemDefault = ItemDefault> {
     name: string;
     private _items: Map<Index, Item<Schema>> = new Map();
     private _onUpdate: PersistFn;
@@ -100,7 +101,7 @@ export class Store {
         this.fPath = fPath;
     }
 
-    collections<T extends ItemBase>(collection: string): Collection<T> {
+    collections<T extends ItemDefault>(collection: string): Collection<T> {
         let ref = this._collections.get(collection);
         if (ref === undefined) {
             ref = new Collection(collection, this.persist);
@@ -120,7 +121,7 @@ export class Store {
     }
 
     serialize(): string {
-        let items: SerializedItem<SerializedBase>[] = [];
+        let items: SerializedItem<SerializedDefault>[] = [];
         for (let collection of this._collections.values()) {
             const serializedItems = collection
                 .all()
@@ -159,7 +160,9 @@ export function itemHasProp<T>(
     return true;
 }
 
-export function validateSerializedItem(item: SerializedItem<SerializedBase>) {
+export function validateSerializedItem(
+    item: SerializedItem<SerializedDefault>
+) {
     //Empty string id
     if (item._id === "") {
         throw new Error(
@@ -188,7 +191,7 @@ export function validateSerializedItem(item: SerializedItem<SerializedBase>) {
     }
 }
 
-export function storeFromObjects<T extends SerializedBase>(
+export function storeFromObjects<T extends SerializedDefault>(
     storedData: SerializedItem<T>[],
     storePath: string = ""
 ): Store {
@@ -208,7 +211,7 @@ export function storeFromObjects<T extends SerializedBase>(
 }
 
 export function storeFromFile(storePath: string): Store {
-    let storedData: SerializedItem<SerializedBase>[];
+    let storedData: SerializedItem<SerializedDefault>[];
     storedData = JSON.parse(readFileSync(storePath, "utf8"));
     return storeFromObjects(storedData, storePath);
 }

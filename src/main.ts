@@ -1,4 +1,16 @@
-import { Store, storeFromFile, storeFromObjects } from "./store";
+import {
+    Store,
+    storeFromFile,
+    storeFromObjects,
+    SerializedItem,
+} from "./store";
+import { Item } from "./types";
 import { queryOp } from "./query";
-
-export { Store, storeFromFile, storeFromObjects, queryOp };
+export {
+    Store,
+    storeFromFile,
+    storeFromObjects,
+    queryOp,
+    SerializedItem,
+    Item,
+};
