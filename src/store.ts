@@ -60,7 +60,7 @@ export class Collection<Schema extends ItemDefault = ItemDefault> {
 
     /**Inserts an item into the collection but does not sync 
       the changes with the data on disk**/
-    async insertSync(object: Omit<Schema, "_id">, id?: Index) {
+    insertSync(object: Omit<Schema, "_id">, id?: Index) {
         this._putInMap(object, id);
     }
 
