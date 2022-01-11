@@ -5,11 +5,11 @@ import { ItemDefault, Item, Index } from "./types";
 import { Query, executeQuery } from "./query";
 //TODO: Add doc comments
 
-export type SerializedItem<T> = {
+type SerializedItem<T> = {
     [Property in keyof T]: T[Property];
 } & { _id: Index; _collection: string };
 
-type SerializedDefault = SerializedItem<unknown>;
+export type SerializedDefault = SerializedItem<unknown>;
 
 type PersistFn = () => Promise<void>;
 

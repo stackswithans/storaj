@@ -2,15 +2,15 @@ import {
     Store,
     storeFromFile,
     storeFromObjects,
-    SerializedItem,
+    SerializedDefault,
 } from "./store";
-import { Item } from "./types";
+import { ItemDefault } from "./types";
 import { queryOp } from "./query";
 export {
     Store,
     storeFromFile,
     storeFromObjects,
     queryOp,
-    SerializedItem,
-    Item,
+    SerializedDefault,
+    ItemDefault,
 };
