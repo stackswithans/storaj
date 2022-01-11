@@ -6,7 +6,7 @@ import { Query, executeQuery } from "./query";
 //TODO: Add doc comments
 type SerializedBase = { _id: Index; _collection: string };
 
-type SerializedItem<T extends SerializedBase = SerializedBase> = {
+type SerializedItem<T extends SerializedBase> = {
     [Property in keyof T]: T[Property];
 };
 
@@ -120,7 +120,7 @@ export class Store {
     }
 
     serialize(): string {
-        let items: SerializedItem[] = [];
+        let items: SerializedItem<SerializedBase>[] = [];
         for (let collection of this._collections.values()) {
             const serializedItems = collection
                 .all()
@@ -159,7 +159,7 @@ export function itemHasProp<T>(
     return true;
 }
 
-export function validateSerializedItem(item: SerializedItem) {
+export function validateSerializedItem(item: SerializedItem<SerializedBase>) {
     //Empty string id
     if (item._id === "") {
         throw new Error(
@@ -188,8 +188,9 @@ export function validateSerializedItem(item: SerializedItem) {
     }
 }
 
-export function storeFromObject(
-    storedData: SerializedItem[],
+//#TODO: rename this to storeFromObjects
+export function storeFromObject<T extends SerializedBase>(
+    storedData: SerializedItem<T>[],
     storePath: string = ""
 ): Store {
     const store = new Store(storePath);
@@ -208,7 +209,7 @@ export function storeFromObject(
 }
 
 export function storeFromFile(storePath: string): Store {
-    let storedData: SerializedItem[];
+    let storedData: SerializedItem<SerializedBase>[];
     storedData = JSON.parse(readFileSync(storePath, "utf8"));
     return storeFromObject(storedData, storePath);
 }

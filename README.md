@@ -15,6 +15,7 @@ npm install storaj
 
 ## Usage (Typescript)
 ```typescript
+
 ```
 
 ## Usage (Javascript)
