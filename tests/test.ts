@@ -1,7 +1,7 @@
 import {
     itemHasProp,
     validateSerializedItem,
-    storeFromObject,
+    storeFromObjects,
     Store,
     Collection,
 } from "../src/store";
@@ -88,7 +88,7 @@ runTests(
         );
     }),
 
-    test("storeFromObject works on valid store schema", () => {
+    test("storeFromObjects works on valid store schema", () => {
         const store = [
             {
                 _id: 1,
@@ -96,7 +96,7 @@ runTests(
             },
         ];
 
-        const cellaStore = storeFromObject(store);
+        const cellaStore = storeFromObjects(store);
         assert.ok(cellaStore instanceof Store);
         assert.ok(cellaStore.hasCollection("messages"));
         assert.deepStrictEqual(cellaStore.collNames()[0], "messages");
@@ -104,10 +104,10 @@ runTests(
         assert.deepStrictEqual(cellaStore.collections("messages").count(), 1);
     }),
 
-    test("storeFromObject fails with non-list argument", () => {
+    test("storeFromObjects fails with non-list argument", () => {
         const store = {} as any;
         assert.throws(
-            () => storeFromObject(store),
+            () => storeFromObjects(store),
             new Error(
                 "Invalid schema passed to function. Argument must be an array of objects"
             )

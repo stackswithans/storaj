@@ -188,8 +188,7 @@ export function validateSerializedItem(item: SerializedItem<SerializedBase>) {
     }
 }
 
-//#TODO: rename this to storeFromObjects
-export function storeFromObject<T extends SerializedBase>(
+export function storeFromObjects<T extends SerializedBase>(
     storedData: SerializedItem<T>[],
     storePath: string = ""
 ): Store {
@@ -211,5 +210,5 @@ export function storeFromObject<T extends SerializedBase>(
 export function storeFromFile(storePath: string): Store {
     let storedData: SerializedItem<SerializedBase>[];
     storedData = JSON.parse(readFileSync(storePath, "utf8"));
-    return storeFromObject(storedData, storePath);
+    return storeFromObjects(storedData, storePath);
 }
