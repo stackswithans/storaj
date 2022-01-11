@@ -1,4 +1,4 @@
 import { Store, storeFromFile, storeFromObject } from "./store";
-import { op } from "./query";
+import { queryOp } from "./query";
 
-export { Store, storeFromFile, storeFromObject, op };
+export { Store, storeFromFile, storeFromObject, queryOp };

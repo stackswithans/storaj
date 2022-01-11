@@ -11,7 +11,7 @@ import {
     processQuery,
     OPList,
     runMatcher,
-    op,
+    queryOp,
 } from "../src/query";
 import { test, runTests } from "./utils";
 import * as assert from "assert";
@@ -269,18 +269,18 @@ runTests(
         assert.deepStrictEqual(matcher.op, OPList.GTE);
     }),
 
-    test("Test op builds correct matchers", () => {
-        let matcher = op.eq(1);
+    test("Test queryOp builds correct matchers", () => {
+        let matcher = queryOp.eq(1);
         assert.deepStrictEqual(matcher.op, OPList.EQ);
-        matcher = op.ne(1);
+        matcher = queryOp.ne(1);
         assert.deepStrictEqual(matcher.op, OPList.NE);
-        matcher = op.lt(1);
+        matcher = queryOp.lt(1);
         assert.deepStrictEqual(matcher.op, OPList.LT);
-        matcher = op.gt(1);
+        matcher = queryOp.gt(1);
         assert.deepStrictEqual(matcher.op, OPList.GT);
-        matcher = op.lte(1);
+        matcher = queryOp.lte(1);
         assert.deepStrictEqual(matcher.op, OPList.LTE);
-        matcher = op.gte(1);
+        matcher = queryOp.gte(1);
         assert.deepStrictEqual(matcher.op, OPList.GTE);
     }),
 
@@ -327,16 +327,16 @@ runTests(
         await collRef.insert({ age: 22, school: "randomUni", sex: "M" }, 2);
         await collRef.insert({ age: 24, school: "randomUni", sex: "F" }, 3);
 
-        let result = collRef.query({ age: op.gt(10) });
+        let result = collRef.query({ age: queryOp.gt(10) });
         assert.deepStrictEqual(result.length, 2);
-        result = collRef.query({ age: op.gt(10), sex: "F" });
+        result = collRef.query({ age: queryOp.gt(10), sex: "F" });
         assert.deepStrictEqual(result.length, 1);
         assert.deepStrictEqual(result[0].sex, "F");
         assert.deepStrictEqual(result[0].age, 24);
-        result = collRef.query({ age: op.lt(24), sex: "M" });
+        result = collRef.query({ age: queryOp.lt(24), sex: "M" });
         assert.deepStrictEqual(result.length, 2);
         result = collRef.query({
-            age: op.lt(24),
+            age: queryOp.lt(24),
             sex: "M",
             school: "randomSchool",
         });

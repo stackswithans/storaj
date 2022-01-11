@@ -28,7 +28,7 @@ export enum OPList {
     LTE,
 }
 
-export const op = {
+export const queryOp = {
     eq: (value: QValues) => new Matcher(OPList.EQ, value),
     ne: (value: QValues) => new Matcher(OPList.NE, value),
     lt: (value: QValues) => new Matcher(OPList.LT, value),
@@ -43,7 +43,7 @@ export function buildMatcher(expression: QValues): Matcher {
         throw new Error("A expression should not be undefined.");
     }
     if (expression instanceof Matcher) {
-        //Already a expression, no need to do anything
+        //Already an expression, no need to do anything
         return expression;
     }
     return new Matcher(OPList.EQ, expression);
