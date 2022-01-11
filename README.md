@@ -17,18 +17,22 @@ npm install storaj
 
 ### Creating a store
 
+Stores can be loaded from files like so:
 ```typescript
 import {
-    Store,
     storeFromFile,
-    storeFromObjects,
-    SerializedDefault,
 } from "storaj";
 
 //Stores can be loaded from files,
 let store = storeFromFile("todos.json"); //this will also persist the data to the todos.json file
+```
+Stores can be also be initialized from an array of valid objects:
+```typescript
+import {
+    storeFromObjects,
+    SerializedDefault,
+} from "storaj";
 
-//initialized from an array of valid objects,
 //extend the SerializedDefault type to get ts typechecking
 interface StoredTodo extends SerializedDefault {
     desc: string;
@@ -59,8 +63,10 @@ store = storeFromObjects<StoredTodo>([
         dueDate: "28-08-2022",
     },
 ]);
-
-//or a brand new one can be created using the Store constructor
+```
+Brand new stores can be created using the Store constructor:
+```typescript
+import { Store } from 'storaj';
 store = new Store(); //Data will only reside in memory, no persistence.
 
 //The constructor can be called with a non-empty string that denotes the path to a file where the data
@@ -79,18 +85,23 @@ interface Todo extends ItemDefault {
     dueDate: string;
 }
 
+//Get a reference to the collection where the object will be inserted 
+// If the collection doesn't exist, it will be created
+const todos = store.collections<Todo>("todos");
+
 //the insert method will add the object to the store and attempt to persist the data;
 //the insert method is async. Either await or handle the promise;
 (async () => {
-    await store
-        .collections<Todo>("todos")
-        .insert({ desc: "new todo", done: true, dueDate: "25-08-2021" });
+    await todos.insert({ desc: "new todo", done: true, dueDate: "25-08-2021" });
+    //An id (String or Number) can also be provided on insertion
+    await todos.insert(
+        { desc: "new todo", done: true, dueDate: "25-08-2021" },
+        "new todo"
+    );
 })();
 
 //Items can also be inserted in sychronously with `insertNoSave`
-store
-    .collections<Todo>("todos")
-    .insertNoSave({ desc: "new todo", done: true, dueDate: "25-08-2021" });
+todos.insertNoSave({ desc: "new todo", done: true, dueDate: "25-08-2021" });
 ```
 
 ## Usage (Javascript)
