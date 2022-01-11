@@ -70,6 +70,7 @@ export class Collection<Schema extends ItemDefault = ItemDefault> {
 
     /**Inserts an item into the collection but does not sync 
       the changes with the data on disk**/
+    //#TODO: Add same type as normal insert;
     insertNoSave(item: Schema) {
         this._validateInsert(item);
         this._items.set(item._id, item);

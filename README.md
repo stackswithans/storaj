@@ -16,22 +16,27 @@ npm install storaj
 ## Usage (Typescript)
 ### Creating a store
 ```typescript
-import { Store, storeFromFile, storeFromObjects, SerializedItem } from "storaj";
+import {
+    Store,
+    storeFromFile,
+    storeFromObjects,
+    SerializedDefault,
+} from "storaj";
 
 //Stores can be loaded from files,
 let store = storeFromFile("todos.json"); //this will also persist the data to the todos.json file
 
 //initialized from an array of valid objects,
-interface StoredTodo {
+//extend the SerializedDefault type to get ts typechecking
+interface StoredTodo extends SerializedDefault {
     desc: string;
     done: boolean;
     dueDate: string;
 }
 
-//Use the SerializedItem type when creating stores from objects 
-store = storeFromObjects<SerializedItem<StoredTodo>>([
+store = storeFromObjects<StoredTodo>([
     {
-        _id: 1 as number, //The _id and _collection field are required when loading objects directly
+        _id: 1 as number,
         _collection: "todos",
         desc: "finish this libray",
         done: false,
@@ -59,6 +64,31 @@ store = new Store(); //Data will only reside in memory, no persistence.
 //The constructor can be called with a non-empty string that denotes the path to a file where the data
 //should be saved to
 store = new Store("db.json");
+```
+### Inserting Objects into a store
+
+```typescript
+import { ItemDefault } from "storaj";
+
+//extend the ItemDefault type to get ts typechecking
+interface Todo extends ItemDefault {
+    desc: string;
+    done: boolean;
+    dueDate: string;
+}
+
+//the insert method will add the object to the store and attempt to persist the data;
+//the insert method is async. Either await or handle the promise;
+(async () => {
+    await store
+        .collections<Todo>("todos")
+        .insert({ desc: "new todo", done: true, dueDate: "25-08-2021" });
+})();
+
+//Items can also be inserted in sychronously with `insertNoSave`
+store
+    .collections<Todo>("todos")
+    .insertNoSave({ desc: "new todo", done: true, dueDate: "25-08-2021" });
 ```
 
 ## Usage (Javascript)
