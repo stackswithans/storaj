@@ -100,8 +100,8 @@ const todos = store.collections<Todo>("todos");
     );
 })();
 
-//Items can also be inserted in sychronously with `insertNoSave`
-todos.insertNoSave({ desc: "new todo", done: true, dueDate: "25-08-2021" });
+//Items can also be inserted sychronously with `insertSync`
+todos.insertSync({ desc: "new todo", done: true, dueDate: "25-08-2021" });
 ```
 ### Retrieving objects from the store
 
