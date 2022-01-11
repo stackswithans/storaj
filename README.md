@@ -140,7 +140,8 @@ Queries can also contain operators to express conditions other than equality
 ```typescript
 import { queryOp } from "storaj";
 
-results = todos.query({ daysTillDue: queryOp.gt(5), done: false}); //Returns all todos that are not done and daysTillDue > 5;
+//Returns all todos that are not done and daysTillDue > 5;
+results = todos.query({ daysTillDue: queryOp.gt(5), done: false});
 ```
 
 ## Usage (Javascript)
