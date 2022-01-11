@@ -12,6 +12,7 @@
     "check": "tsc --noEmit", 
     "prepare":"npm run test && npm run build"
   },
+  "files": ["/dist/*"], 
   "keywords": [
     "storage",
     "database",
