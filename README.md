@@ -103,7 +103,39 @@ const todos = store.collections<Todo>("todos");
 //Items can also be inserted in sychronously with `insertNoSave`
 todos.insertNoSave({ desc: "new todo", done: true, dueDate: "25-08-2021" });
 ```
+### Retrieving objects from the store
+
+The `get` method of a collection can be used to get an item by id;
+```typescript
+interface TodoI extends ItemDefault {
+    desc: string;
+    daysTillDue: number;
+    done: boolean;
+    dueDate: string;
+}
+
+todos = store.collections<TodoI>("todos");
+//## The `get` method of a collection can be used to get an item by id;
+let todo = todos.get("new todo");
+console.log(todo.desc);
+```
+
+The `query` method can be used to get a set of items based on the value of chosen fields;
+```Typescript
+let results = todos.query({ desc: "new todo" }); // Returns all todos that have desc == "new todo";
+
+//Adding more fields to the query object will result in an "AND" clause.
+results = todos.query({ desc: "new todo", dueDate: "25-08-2021" }); //Returns all todos that have desc == "new todo" and dueDate == "25-08-2021";
+
+//Do something with the array of results
+results.forEach((todo) => console.log(todo.desc));
+```
+Queries can also contain operators to express conditions other than equality: 
+```typescript
+import { queryOp } from "storaj";
+
+results = todos.query({ daysTillDue: queryOp.gt(5), done: false}); //Returns all todos that are not done and daysTillDue > 5;
+```
 
 ## Usage (Javascript)
-```typescript
-```
+The API is exactly the same, only difference is the absence of generic type parameters in some of the functions/classes.
