@@ -14,7 +14,9 @@ npm install storaj
 ```
 
 ## Usage (Typescript)
+
 ### Creating a store
+
 ```typescript
 import {
     Store,
