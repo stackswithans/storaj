@@ -1,6 +1,6 @@
 {
   "name": "storaj",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "A simple lightweight object storage library",
   "main": "./dist/main.js",
   "types": "./dist/main.d.ts", 
@@ -12,6 +12,7 @@
     "check": "tsc --noEmit", 
     "prepare":"npm run test && npm run build"
   },
+  "files": ["/dist/*"], 
   "keywords": [
     "storage",
     "database",
