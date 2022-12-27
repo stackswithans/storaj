@@ -214,7 +214,6 @@ runTests(
         //Clean up opened file
         await unlink(filePath);
         rmdirSync(dirname(filePath).split("/")[0], { recursive: true });
-        rmdirSync("db");
     }),
 
     test("Test Store initialize the store from file if path given", async () => {
