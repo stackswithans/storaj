@@ -1,16 +1,8 @@
-import {
-    Store,
-    storeFromFile,
-    storeFromObjects,
-    SerializedDefault,
-} from "./store";
-import { ItemDefault } from "./types";
-import { queryOp } from "./query";
 export {
-    Store,
-    storeFromFile,
-    storeFromObjects,
-    queryOp,
-    SerializedDefault,
-    ItemDefault,
-};
+  Store,
+  storeFromFile,
+  storeFromObjects,
+  SerializedDefault,
+} from "./store";
+export { ItemDefault } from "./types";
+export { queryOp } from "./query";
