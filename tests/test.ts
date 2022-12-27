@@ -1,3 +1,4 @@
+import { dirname } from 'path';
 import {
     itemHasProp,
     validateSerializedItem,
@@ -15,7 +16,7 @@ import {
 } from "../src/query";
 import { test, runTests } from "./utils";
 import * as assert from "assert";
-import { readFileSync } from "fs";
+import { readFileSync, rmdir, rmdirSync, writeFileSync } from "fs";
 import { unlink } from "fs/promises";
 
 runTests(
@@ -200,7 +201,7 @@ runTests(
     }),
 
     test("Test Store persist saves file if path given", async () => {
-        const filePath = "db/test.json";
+        const filePath = "storaj/recursive/path/test.json";
         const store = new Store(filePath);
         const testCol = store.collections("test");
         await testCol.insert({ message: "message1" }, 1);
@@ -209,6 +210,25 @@ runTests(
 
         const data = readFileSync(filePath, "utf8");
         assert.deepStrictEqual(data, store.serialize());
+
+        //Clean up opened file
+        await unlink(filePath);
+        rmSync(dirname(filePath).split('/')[0], { recursive: true });
+        rmdirSync('db');
+    }),
+
+    test("Test Store initialize the store from file if path given", async () => {
+        const filePath = "test.json";
+        // JSON data under test
+        const data = JSON.stringify([{ _id: "1", _collection: "test" }]);
+        
+        writeFileSync(filePath, data);
+        const fileData = readFileSync(filePath, "utf8");
+        assert.deepStrictEqual(fileData, data);
+
+        const store = new Store(filePath);
+        const serializedStore = store.serialize();
+        assert.deepStrictEqual(data, serializedStore);
 
         //Clean up opened file
         await unlink(filePath);

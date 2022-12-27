@@ -1,3 +1,4 @@
 /node_modules
 store.json
 /dist
+/db
