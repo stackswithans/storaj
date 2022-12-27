@@ -1,4 +1,4 @@
-import { dirname } from 'path';
+import { dirname } from "path";
 import {
     itemHasProp,
     validateSerializedItem,
@@ -16,7 +16,7 @@ import {
 } from "../src/query";
 import { test, runTests } from "./utils";
 import * as assert from "assert";
-import { readFileSync, rmdir, rmdirSync, writeFileSync } from "fs";
+import { readFileSync, rmdirSync, writeFileSync } from "fs";
 import { unlink } from "fs/promises";
 
 runTests(
@@ -213,15 +213,14 @@ runTests(
 
         //Clean up opened file
         await unlink(filePath);
-        rmSync(dirname(filePath).split('/')[0], { recursive: true });
-        rmdirSync('db');
+        rmdirSync(dirname(filePath).split("/")[0], { recursive: true });
     }),
 
     test("Test Store initialize the store from file if path given", async () => {
         const filePath = "test.json";
         // JSON data under test
         const data = JSON.stringify([{ _id: "1", _collection: "test" }]);
-        
+
         writeFileSync(filePath, data);
         const fileData = readFileSync(filePath, "utf8");
         assert.deepStrictEqual(fileData, data);
