@@ -15,7 +15,7 @@ import {
 } from "../src/query";
 import { test, runTests } from "./utils";
 import * as assert from "assert";
-import { readFileSync } from "fs";
+import { readFileSync, rmdir, rmdirSync, writeFileSync } from "fs";
 import { unlink } from "fs/promises";
 
 runTests(
@@ -209,6 +209,24 @@ runTests(
 
         const data = readFileSync(filePath, "utf8");
         assert.deepStrictEqual(data, store.serialize());
+
+        //Clean up opened file
+        await unlink(filePath);
+        rmdirSync('db');
+    }),
+
+    test("Test Store initialize the store from file if path given", async () => {
+        const filePath = "test.json";
+        // JSON data under test
+        const data = JSON.stringify([{ _id: "1", _collection: "test" }]);
+        
+        writeFileSync(filePath, data);
+        const fileData = readFileSync(filePath, "utf8");
+        assert.deepStrictEqual(fileData, data);
+
+        const store = new Store(filePath);
+        const serializedStore = store.serialize();
+        assert.deepStrictEqual(data, serializedStore);
 
         //Clean up opened file
         await unlink(filePath);
