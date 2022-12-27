@@ -109,6 +109,27 @@ export class Store {
     constructor(fPath: string = "") {
         //Empty string means that data should not be persisted to disk
         this.fPath = fPath;
+        this.initStore();
+    }
+
+    initStore() {        
+        if (!this.fPath) return;
+
+        if (!existsSync(dirname(this.fPath))) return;
+        
+        const fileData = JSON.parse(readFileSync(this.fPath, "utf8"));
+
+        if (!(fileData instanceof Array)) {
+            throw new Error(
+                "Invalid schema coming from file. Data must be an array of objects"
+            );
+        }
+        fileData.forEach((item) => {
+            validateSerializedItem(item);
+            const collection = this.collections(item._collection);
+            const { _id, _collection, ...data } = item;
+            collection._insertNoSave({ _id, ...data });
+        });
     }
 
     collections<T extends ItemDefault>(collection: string): Collection<T> {
