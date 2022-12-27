@@ -200,7 +200,7 @@ runTests(
     }),
 
     test("Test Store persist saves file if path given", async () => {
-        const filePath = "test.json";
+        const filePath = "db/test.json";
         const store = new Store(filePath);
         const testCol = store.collections("test");
         await testCol.insert({ message: "message1" }, 1);

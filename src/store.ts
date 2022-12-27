@@ -1,5 +1,6 @@
 import { writeFile } from "fs/promises";
-import { readFileSync } from "fs";
+import { readFileSync, existsSync, mkdirSync} from "fs";
+import { dirname } from "path";
 import { randomUUID } from "crypto";
 import { ItemDefault, Item, Index } from "./types";
 import { Query, executeQuery } from "./query";
@@ -147,6 +148,10 @@ export class Store {
     async persist() {
         if (!this.fPath) {
             return;
+        }
+        const folderName =  dirname(this.fPath);
+        if (!existsSync(folderName)) {
+            mkdirSync(folderName);
         }
         await writeFile(this.fPath, this.serialize(), { encoding: "utf8" });
     }
