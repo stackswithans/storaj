@@ -151,7 +151,7 @@ export class Store {
         }
         const folderName =  dirname(this.fPath);
         if (!existsSync(folderName)) {
-            mkdirSync(folderName);
+            mkdirSync(folderName, { recursive: true });
         }
         await writeFile(this.fPath, this.serialize(), { encoding: "utf8" });
     }
