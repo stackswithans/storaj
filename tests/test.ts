@@ -1,3 +1,4 @@
+import { dirname } from 'path';
 import {
     itemHasProp,
     validateSerializedItem,
@@ -200,7 +201,7 @@ runTests(
     }),
 
     test("Test Store persist saves file if path given", async () => {
-        const filePath = "db/test.json";
+        const filePath = "storaj/recursive/path/test.json";
         const store = new Store(filePath);
         const testCol = store.collections("test");
         await testCol.insert({ message: "message1" }, 1);
@@ -212,6 +213,7 @@ runTests(
 
         //Clean up opened file
         await unlink(filePath);
+        rmSync(dirname(filePath).split('/')[0], { recursive: true });
         rmdirSync('db');
     }),
 
