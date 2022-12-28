@@ -1,8 +1,8 @@
 import { writeFile } from "fs/promises";
-import { readFileSync, existsSync, mkdirSync} from "fs";
+import { writeFileSync, readFileSync, existsSync, mkdirSync } from "fs";
 import { dirname } from "path";
 import { randomUUID } from "crypto";
-import { ItemDefault, Item, Index } from "./types";
+import { Item, Index } from "./types";
 import { Query, executeQuery } from "./query";
 //TODO: Add doc comments
 
@@ -10,25 +10,30 @@ type SerializedItem<T> = {
     [Property in keyof T]: T[Property];
 } & { _id: Index; _collection: string };
 
-export type SerializedDefault = SerializedItem<unknown>;
-
-type PersistFn = () => Promise<void>;
+type PersistFn<T> = () => T;
+type PersistFnSync = () => void;
 
 //#TODO: Implement options for the persistance
-export class Collection<Schema extends ItemDefault = ItemDefault> {
+export class Collection<Schema extends object> {
     name: string;
     private _items: Map<Index, Item<Schema>> = new Map();
-    private _onUpdate: PersistFn;
+    private _dump: PersistFn<Promise<void>>;
+    private _dumpSync: PersistFn<void>;
 
-    constructor(name: string, onUpdate: PersistFn) {
+    constructor(
+        name: string,
+        dump: PersistFn<Promise<void>>,
+        dumpSync: PersistFn<void>
+    ) {
         this.name = name;
-        this._onUpdate = onUpdate;
+        this._dump = dump;
+        this._dumpSync = dumpSync;
     }
 
     private _validateInsert(item: Item<Schema>) {
         const idIsValid =
             itemHasProp(item, "_id", "string") ||
-            itemHasProp(item, "_id", "number");
+            (itemHasProp(item, "_id", "number") && Number.isInteger(item._id));
         if (!idIsValid) {
             throw new Error(
                 `InsertionError: The id of an item must be a number or a string.`
@@ -41,11 +46,12 @@ export class Collection<Schema extends ItemDefault = ItemDefault> {
         }
     }
 
-    private _putInMap(object: Omit<Schema, "_id">, id?: Index) {
-        if (id === undefined) {
-            id = randomUUID();
+    private _putInMap(object: Partial<Item<Schema>>, id?: Index) {
+        let objId = id ? id : object._id;
+        if (!objId) {
+            objId = randomUUID();
         }
-        const item = { _id: id, ...object } as Item<Schema>;
+        const item = { _id: objId, ...object } as Item<Schema>;
         this._validateInsert(item);
         this._items.set(item._id, item);
     }
@@ -54,15 +60,30 @@ export class Collection<Schema extends ItemDefault = ItemDefault> {
       @params {CellaItem} item - the item to add to the collection 
     **/
     //#TODO: Return the inserted object or it's id
-    async insert(object: Omit<Schema, "_id">, id?: Index) {
+    async insert(object: Schema, id?: Index) {
         this._putInMap(object, id);
-        await this._onUpdate();
+        await this._dump();
     }
 
-    /**Inserts an item into the collection but does not sync 
-      the changes with the data on disk**/
-    insertSync(object: Omit<Schema, "_id">, id?: Index) {
+    async insertMany(...objects: Array<Partial<Item<Schema>>>) {
+        objects.forEach((object) => {
+            this._putInMap(object, object._id);
+        });
+        await this._dump();
+    }
+
+    /**Synchronous version of insert**/
+    insertSync(object: Schema, id?: Index) {
         this._putInMap(object, id);
+        this._dumpSync();
+    }
+
+    /**Synchronous version of insertMany**/
+    insertManySync(...objects: Array<Partial<Item<Schema>>>) {
+        objects.forEach((object) => {
+            this._putInMap(object, object._id);
+        });
+        this._dumpSync();
     }
 
     get(id: Index): Item<Schema> | null {
@@ -73,14 +94,23 @@ export class Collection<Schema extends ItemDefault = ItemDefault> {
         return item;
     }
 
-    query(q: Query<Schema>): Item<Schema>[] {
+    query(q: Query<Item<Schema>>): Item<Schema>[] {
         return executeQuery(this._items, q);
     }
+
+    /*
+    where(filter: Filter<Item<Schema>>): Item<Schema>[] {
+        let resultSet = [];
+        for (let item of this._items.values()) {
+            if (filter(item)) resultSet.push(item);
+        }
+        return resultSet;
+    }*/
 
     aggregate() {}
 
     //#TODO: Add same type as normal insert;
-    _insertNoSave(item: Schema) {
+    _insertNoSave(item: Item<Schema>) {
         this._validateInsert(item);
         this._items.set(item._id, item);
         item;
@@ -99,7 +129,8 @@ export class Collection<Schema extends ItemDefault = ItemDefault> {
 export class Store {
     /**@property fPath - Path to the file where the data should be persisted*/
     readonly fPath: string;
-    readonly _collections: Map<string | number, Collection> = new Map();
+    readonly _collections: Map<string | number, Collection<Item<object>>> =
+        new Map();
 
     //#TODO: Implement options for the persistance
     /** Provides references to the collections in the store.
@@ -112,11 +143,11 @@ export class Store {
         this.initStore();
     }
 
-    initStore() {        
+    initStore() {
         if (!this.fPath) return;
 
         if (!existsSync(dirname(this.fPath))) return;
-        
+
         const fileData = JSON.parse(readFileSync(this.fPath, "utf8"));
 
         if (!(fileData instanceof Array)) {
@@ -132,10 +163,10 @@ export class Store {
         });
     }
 
-    collections<T extends ItemDefault>(collection: string): Collection<T> {
+    collections<T extends object>(collection: string): Collection<T> {
         let ref = this._collections.get(collection);
         if (ref === undefined) {
-            ref = new Collection(collection, this.persist);
+            ref = new Collection(collection, this.persist, this.persistSync);
             this._collections.set(collection, ref);
         }
         return ref as Collection<T>;
@@ -151,8 +182,8 @@ export class Store {
         return Array.from(this._collections.keys()) as string[];
     }
 
-    serialize(): string {
-        let items: SerializedItem<SerializedDefault>[] = [];
+    _serialize(): string {
+        let items: SerializedItem<any>[] = [];
         for (let collection of this._collections.values()) {
             const serializedItems = collection
                 .all()
@@ -170,11 +201,22 @@ export class Store {
         if (!this.fPath) {
             return;
         }
-        const folderName =  dirname(this.fPath);
+        const folderName = dirname(this.fPath);
         if (!existsSync(folderName)) {
             mkdirSync(folderName, { recursive: true });
         }
-        await writeFile(this.fPath, this.serialize(), { encoding: "utf8" });
+        await writeFile(this.fPath, this._serialize(), { encoding: "utf8" });
+    }
+
+    persistSync() {
+        if (!this.fPath) {
+            return;
+        }
+        const folderName = dirname(this.fPath);
+        if (!existsSync(folderName)) {
+            mkdirSync(folderName, { recursive: true });
+        }
+        writeFileSync(this.fPath, this._serialize(), { encoding: "utf8" });
     }
 }
 
@@ -195,8 +237,8 @@ export function itemHasProp<T>(
     return true;
 }
 
-export function validateSerializedItem(
-    item: SerializedItem<SerializedDefault>
+export function validateSerializedItem<T extends object>(
+    item: SerializedItem<T>
 ) {
     //Empty string id
     if (item._id === "") {
@@ -224,29 +266,4 @@ export function validateSerializedItem(
             )}`
         );
     }
-}
-
-export function storeFromObjects<T extends SerializedDefault>(
-    storedData: SerializedItem<T>[],
-    storePath: string = ""
-): Store {
-    const store = new Store(storePath);
-    if (!(storedData instanceof Array)) {
-        throw new Error(
-            "Invalid schema passed to function. Argument must be an array of objects"
-        );
-    }
-    storedData.forEach((item) => {
-        validateSerializedItem(item);
-        const collection = store.collections(item._collection);
-        const { _id, _collection, ...data } = item;
-        collection._insertNoSave({ _id, ...data });
-    });
-    return store;
-}
-
-export function storeFromFile(storePath: string): Store {
-    let storedData: SerializedItem<SerializedDefault>[];
-    storedData = JSON.parse(readFileSync(storePath, "utf8"));
-    return storeFromObjects(storedData, storePath);
 }
