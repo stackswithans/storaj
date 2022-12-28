@@ -2,7 +2,6 @@ import { dirname } from "path";
 import {
     itemHasProp,
     validateSerializedItem,
-    storeFromObjects,
     Store,
     Collection,
 } from "../src/store";
@@ -89,30 +88,100 @@ runTests(
         );
     }),
 
-    test("storeFromObjects works on valid store schema", () => {
-        const store = [
+    test("insertMany works", async () => {
+        const items = [
             {
-                _id: 1,
-                _collection: "messages",
+                message: "hello world",
+                email: "test@gmail.com",
+            },
+            {
+                message: "hello world 2",
+                email: "test2@gmail.com",
+            },
+            {
+                message: "hello world 3",
+                email: "test3@gmail.com",
             },
         ];
 
-        const cellaStore = storeFromObjects(store);
-        assert.ok(cellaStore instanceof Store);
-        assert.ok(cellaStore.hasCollection("messages"));
-        assert.deepStrictEqual(cellaStore.collNames()[0], "messages");
-        assert.ok(cellaStore.collections("messages") instanceof Collection);
-        assert.deepStrictEqual(cellaStore.collections("messages").count(), 1);
+        const store = new Store();
+        const collection = store.collections<{
+            message: string;
+            email: string;
+        }>("messages");
+        await collection.insertMany(...items);
+
+        assert.ok(store.hasCollection("messages"));
+        assert.deepStrictEqual(store.collNames()[0], "messages");
+
+        assert.deepStrictEqual(collection.count(), 3);
     }),
 
-    test("storeFromObjects fails with non-list argument", () => {
-        const store = {} as any;
-        assert.throws(
-            () => storeFromObjects(store),
+    test("insertMany fails on invalid schema", async () => {
+        const items = [
+            {
+                _id: 3.212,
+                message: "hello world",
+                email: "test@gmail.com",
+            },
+            {
+                message: "hello world 2",
+                email: "test2@gmail.com",
+            },
+            {
+                message: "hello world 3",
+                email: "test3@gmail.com",
+            },
+        ];
+
+        const store = new Store();
+        const collection = store.collections<{
+            message: string;
+            email: string;
+        }>("messages");
+        await assert.rejects(
+            async () => await collection.insertMany(...items),
             new Error(
-                "Invalid schema passed to function. Argument must be an array of objects"
+                `InsertionError: The id of an item must be a number or a string.`
             )
         );
+        assert.throws(
+            () => collection.insertManySync(...items),
+            new Error(
+                `InsertionError: The id of an item must be a number or a string.`
+            )
+        );
+
+        assert.deepStrictEqual(collection.count(), 0);
+    }),
+
+    test("insertManySync works", () => {
+        const items = [
+            {
+                message: "hello world",
+                email: "test@gmail.com",
+            },
+            {
+                message: "hello world 2",
+                email: "test2@gmail.com",
+            },
+            {
+                message: "hello world 3",
+                email: "test3@gmail.com",
+            },
+        ];
+
+        const store = new Store();
+        const collection = store.collections<{
+            message: string;
+            email: string;
+        }>("messages");
+        collection.insertMany(...items);
+
+        assert.ok(store.hasCollection("messages"));
+        assert.deepStrictEqual(store.collNames()[0], "messages");
+
+        assert.deepStrictEqual(collection.count(), 3);
     }),
 
     test("Store collections creates new collection if not exists", () => {
@@ -190,7 +259,7 @@ runTests(
         await testCol.insert({ message: "message1" }, 1);
         await testCol.insert({ message: "message2" }, 2);
 
-        const serStore = store.serialize();
+        const serStore = store._serialize();
         assert.deepStrictEqual(
             serStore,
             JSON.stringify([
@@ -209,7 +278,7 @@ runTests(
         await store.persist();
 
         const data = readFileSync(filePath, "utf8");
-        assert.deepStrictEqual(data, store.serialize());
+        assert.deepStrictEqual(data, store._serialize());
 
         //Clean up opened file
         await unlink(filePath);
@@ -226,7 +295,7 @@ runTests(
         assert.deepStrictEqual(fileData, data);
 
         const store = new Store(filePath);
-        const serializedStore = store.serialize();
+        const serializedStore = store._serialize();
         assert.deepStrictEqual(data, serializedStore);
 
         //Clean up opened file
@@ -236,7 +305,6 @@ runTests(
     test("Test Collection get works as expected", async () => {
         const store = new Store();
         const testCol = store.collections<{
-            _id: number | string;
             message: string;
         }>("test");
         await testCol.insert({ message: "message1" }, 1);
@@ -328,7 +396,6 @@ runTests(
     test("Test Collection query equality works", async () => {
         const store = new Store();
         const testCol = store.collections<{
-            _id: string | number;
             message: string;
         }>("test");
         await testCol.insert({ message: "message1" }, 1);
@@ -343,10 +410,25 @@ runTests(
         assert.deepStrictEqual(result[0].message, "message2");
     }),
 
+    /*
+    test("Test Collection or queries work", async () => {
+        const store = new Store();
+        const numbers = store.collections<{ num: string }>("numbers");
+        numbers.where(
+            or(
+                {
+                    num: "10212",
+                },
+                {
+                    num: "10212",
+                }
+            )
+        );
+    }),*/
+
     test("Test Collection complex queries wok", async () => {
         const store = new Store();
         const collRef = store.collections<{
-            _id: string | number;
             age: number;
             school: string;
             sex: string;
