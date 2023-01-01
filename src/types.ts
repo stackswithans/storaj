@@ -5,3 +5,5 @@ export type Item<T> = {
 export type ItemDefault = Item<unknown>;
 
 export type Index = string | number;
+
+export type StoreData = string | number | null | boolean;

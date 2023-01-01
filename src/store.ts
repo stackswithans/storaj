@@ -3,7 +3,8 @@ import { writeFileSync, readFileSync, existsSync, mkdirSync } from "fs";
 import { dirname } from "path";
 import { randomUUID } from "crypto";
 import { Item, Index } from "./types";
-import { Query, executeQuery } from "./query";
+import { Query } from "./query";
+import { QuerySpec } from "./criteria";
 //TODO: Add doc comments
 
 type SerializedItem<T> = {
@@ -94,18 +95,9 @@ export class Collection<Schema extends object> {
         return item;
     }
 
-    query(q: Query<Item<Schema>>): Item<Schema>[] {
-        return executeQuery(this._items, q);
+    where(criteria: QuerySpec<Schema>): Query<Schema> {
+        return new Query(criteria, this._items.values());
     }
-
-    /*
-    where(filter: Filter<Item<Schema>>): Item<Schema>[] {
-        let resultSet = [];
-        for (let item of this._items.values()) {
-            if (filter(item)) resultSet.push(item);
-        }
-        return resultSet;
-    }*/
 
     aggregate() {}
 
