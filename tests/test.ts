@@ -454,5 +454,48 @@ runTests(
         assert.deepStrictEqual(result[0].age, 10);
         assert.deepStrictEqual(result[0].school, "randomSchool");
         assert.deepStrictEqual(result[0].sex, "M");
+    }),
+
+    test("Test select works correctly projects props", async () => {
+        const store = new Store();
+        const collRef = store.collections<{
+            age: number;
+            school: string;
+            sex: string;
+        }>("test");
+        await collRef.insertMany(
+            { _id: 1, age: 10, school: "randomSchool", sex: "M" },
+            { _id: 2, age: 22, school: "randomUni", sex: "M" },
+            { _id: 3, age: 24, school: "randomUni", sex: "F" }
+        );
+
+        const results = collRef
+            .where({})
+            .select((item) => ({ age: item.age }))
+            .execute();
+        assert.equal(results.length, 3);
+        assert.equal(results[0].age, 10);
+        assert.equal(results[1].age, 22);
+        assert.equal(results[2].age, 24);
+    }),
+
+    test("Test empty where returns all items", async () => {
+        const store = new Store();
+        const collRef = store.collections<{
+            age: number;
+            school: string;
+            sex: string;
+        }>("test");
+        await collRef.insertMany(
+            { _id: 1, age: 10, school: "randomSchool", sex: "M" },
+            { _id: 2, age: 22, school: "randomUni", sex: "M" },
+            { _id: 3, age: 24, school: "randomUni", sex: "F" }
+        );
+
+        const results = collRef.where({}).execute();
+        assert.equal(results.length, 3);
+        assert.equal(results[0]._id, 1);
+        assert.equal(results[1]._id, 2);
+        assert.equal(results[2]._id, 3);
     })
 );

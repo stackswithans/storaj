@@ -11,6 +11,7 @@ import {
     isQOperator,
     isOperatorSpec,
     makeCriterion,
+    allCriteria,
 } from "./criteria";
 
 export function parseQuerySpec<T extends object>(
@@ -20,6 +21,10 @@ export function parseQuerySpec<T extends object>(
     //sequence of and operations
     if (!(typeof qSpec === "object")) {
         throw new Error("QuerySpec must be an object.");
+    }
+
+    if (Object.values(qSpec).length === 0) {
+        return allCriteria();
     }
 
     let prevExpr: QExpression<T> | null = null;
@@ -50,8 +55,10 @@ export function parseQuerySpec<T extends object>(
     return prevExpr as QExpression<T>;
 }
 
-export class Query<T extends object, E = Item<T>> {
-    private _selector: (item: Item<T>) => E | Item<T>;
+type Projection<T> = (item: Item<T>) => Partial<Item<T>>;
+
+export class Query<T extends object> {
+    private _selector: Projection<T>;
     private _criteria: QExpression<T>;
     private _items: IterableIterator<Item<T>>;
 
@@ -66,25 +73,25 @@ export class Query<T extends object, E = Item<T>> {
         this._selector = (item) => item;
     }
 
-    where(qSpec: QuerySpec<T> | QOperator<T>) {
+    where(qSpec: QuerySpec<T> | QOperator<T>): Query<T> {
         let qExpr = isQOperator(qSpec) ? qSpec : parseQuerySpec(qSpec);
         //Multiple calls to where just adds and clauses to criteria
         this._criteria = makeOperator(Operators.AND, this._criteria, qExpr);
         return this;
     }
 
-    select(selector: (item: Item<T>) => E) {
+    select(selector: Projection<T>): Query<T> {
         this._selector = selector;
         return this;
     }
 
-    execute(): Array<E> {
-        let resultSet: Array<E> = [];
+    execute(): Array<ReturnType<Projection<T>>> {
+        let resultSet = [];
         for (let item of this._items) {
             if (!this._criteria.eval(item)) {
                 continue;
             }
-            resultSet.push(this._selector(item) as E);
+            resultSet.push(this._selector(item));
         }
         return resultSet;
     }
