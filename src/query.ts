@@ -2,13 +2,15 @@
 import { Item, StoreData } from "./types";
 import {
     QExpression,
-    isCriterion,
     Operators,
     makeOperator,
     makeEqCriterion,
     QuerySpec,
+    OperatorSpec,
     QOperator,
     isQOperator,
+    isOperatorSpec,
+    makeCriterion,
 } from "./criteria";
 
 export function parseQuerySpec<T extends object>(
@@ -22,7 +24,7 @@ export function parseQuerySpec<T extends object>(
 
     let prevExpr: QExpression<T> | null = null;
     for (let [key, value] of Object.entries(qSpec)) {
-        if (!isStoreData(value) && !isCriterion(value)) {
+        if (!isStoreData(value) && !isOperatorSpec(value)) {
             throw new Error(
                 "Invalid QuerySpec object. The properties of QuerySpec objects must be primitive values or query criterion"
             );
@@ -36,9 +38,13 @@ export function parseQuerySpec<T extends object>(
                   )
                 : makeEqCriterion(key as keyof Item<T>, value);
         } else {
+            let op = value as OperatorSpec;
+            let criterion = makeCriterion(op.opType, key, op.value, (item) =>
+                op.eval(item[key] as StoreData, op.value)
+            );
             prevExpr = prevExpr
-                ? makeOperator(Operators.AND, prevExpr, value)
-                : value;
+                ? makeOperator(Operators.AND, prevExpr, criterion)
+                : criterion;
         }
     }
     return prevExpr as QExpression<T>;

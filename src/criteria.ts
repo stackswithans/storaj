@@ -1,7 +1,13 @@
 import { Item, StoreData, Index } from "./types";
 
+export type OperatorSpec = {
+    type: "OperatorSpec";
+    opType: CriterionTy;
+    value: StoreData;
+    eval(left: StoreData, right: StoreData): boolean;
+};
 export type QuerySpec<T extends object> = {
-    [field in keyof T]?: T[field] | Criterion<T>;
+    [field in keyof T]?: T[field] | OperatorSpec;
 } & { _id?: Index };
 
 export interface QExpression<T> {
@@ -64,6 +70,14 @@ export function makeEqCriterion<T>(
     };
 }
 
+export function makeOpSpec(
+    opType: CriterionTy,
+    value: StoreData,
+    evalFn: (l: StoreData, r: StoreData) => boolean
+): OperatorSpec {
+    return { type: "OperatorSpec", opType, value, eval: evalFn };
+}
+
 export function makeOperator<T>(
     opType: OpType,
     leftExp: QExpression<T>,
@@ -78,6 +92,10 @@ export function makeOperator<T>(
                 ? leftExp.eval(item) && rightEXp.eval(item)
                 : leftExp.eval(item) || rightEXp.eval(item),
     };
+}
+
+export function isOperatorSpec(expr: any): expr is OperatorSpec {
+    return expr.type === "OperatorSpec";
 }
 
 export function isQOperator<T>(expr: any): expr is QOperator<T> {

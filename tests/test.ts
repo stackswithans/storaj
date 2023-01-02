@@ -5,14 +5,7 @@ import {
     Store,
     Collection,
 } from "../src/store";
-import {
-    buildMatcher,
-    Matcher,
-    processQuery,
-    OPList,
-    runMatcher,
-    queryOp,
-} from "../src/query";
+import * as qoperators from "../src/qoperators";
 import { test, runTests } from "./utils";
 import * as assert from "assert";
 import { readFileSync, rmdirSync, writeFileSync } from "fs";
@@ -317,83 +310,88 @@ runTests(
         assert.deepStrictEqual(testCol.get(3), null);
     }),
 
-    test("Test buildMatcher  builds matcher correctly", async () => {
-        let matcher = buildMatcher(1);
-        assert.deepStrictEqual(matcher instanceof Matcher, true);
-        assert.deepStrictEqual(matcher.op, OPList.EQ);
-
-        matcher = buildMatcher(new Matcher(OPList.EQ, 1));
-        assert.deepStrictEqual(matcher instanceof Matcher, true);
-        assert.deepStrictEqual(matcher.op, OPList.EQ);
-        assert.deepStrictEqual(matcher.value, 1);
-
-        assert.throws(() => buildMatcher(undefined as any));
-    }),
-
-    test("Test runMatcher works as expected correctly", async () => {
-        let matcher = new Matcher(OPList.EQ, 1);
-        assert.deepStrictEqual(runMatcher(matcher, 1), true);
-        assert.deepStrictEqual(runMatcher(matcher, 2), false);
-        assert.deepStrictEqual(matcher.op, OPList.EQ);
-
-        matcher = new Matcher(OPList.NE, "test");
-        assert.deepStrictEqual(runMatcher(matcher, "test"), false);
-        assert.deepStrictEqual(runMatcher(matcher, "test1"), true);
-        assert.deepStrictEqual(matcher.op, OPList.NE);
-
-        matcher = new Matcher(OPList.LT, 1);
-        assert.deepStrictEqual(runMatcher(matcher, 2), false);
-        assert.deepStrictEqual(runMatcher(matcher, 1), false);
-        assert.deepStrictEqual(runMatcher(matcher, 0), true);
-        assert.deepStrictEqual(matcher.op, OPList.LT);
-
-        matcher = new Matcher(OPList.LTE, 1);
-        assert.deepStrictEqual(runMatcher(matcher, 1), true);
-        assert.deepStrictEqual(runMatcher(matcher, 0), true);
-        assert.deepStrictEqual(runMatcher(matcher, 3), false);
-        assert.deepStrictEqual(matcher.op, OPList.LTE);
-
-        matcher = new Matcher(OPList.GT, 1);
-        assert.deepStrictEqual(runMatcher(matcher, 1), false);
-        assert.deepStrictEqual(runMatcher(matcher, 2), true);
-        assert.deepStrictEqual(matcher.op, OPList.GT);
-
-        matcher = new Matcher(OPList.GTE, 1);
-        assert.deepStrictEqual(runMatcher(matcher, 1), true);
-        assert.deepStrictEqual(runMatcher(matcher, 2), true);
-        assert.deepStrictEqual(runMatcher(matcher, 0), false);
-        assert.deepStrictEqual(matcher.op, OPList.GTE);
-    }),
-
-    test("Test queryOp builds correct matchers", () => {
-        let matcher = queryOp.eq(1);
-        assert.deepStrictEqual(matcher.op, OPList.EQ);
-        matcher = queryOp.ne(1);
-        assert.deepStrictEqual(matcher.op, OPList.NE);
-        matcher = queryOp.lt(1);
-        assert.deepStrictEqual(matcher.op, OPList.LT);
-        matcher = queryOp.gt(1);
-        assert.deepStrictEqual(matcher.op, OPList.GT);
-        matcher = queryOp.lte(1);
-        assert.deepStrictEqual(matcher.op, OPList.LTE);
-        matcher = queryOp.gte(1);
-        assert.deepStrictEqual(matcher.op, OPList.GTE);
-    }),
-
-    test("Test processQuery works as expected correctly", async () => {
-        type Message = { _id: number | string; message: string };
-        let q: Message = {
-            _id: 2,
-            message: "hello",
+    test("Test qoperators work correctly works as expected correctly", async () => {
+        const item = {
+            _id: "assa",
+            name: "john",
+            age: 10,
         };
-        const data = processQuery<Message>(q);
-        assert.deepStrictEqual(data.get("_id")?.op, OPList.EQ);
-        assert.deepStrictEqual(data.get("_id")?.value, 2);
-        assert.deepStrictEqual(data.get("message")?.op, OPList.EQ);
-        assert.deepStrictEqual(data.get("message")?.value, "hello");
+
+        let criterion = qoperators.eq("john");
+        assert.deepStrictEqual(
+            criterion.eval(criterion.value, item.name),
+            true
+        );
+
+        criterion = qoperators.eq(11);
+        assert.deepStrictEqual(
+            criterion.eval(item.age, criterion.value),
+            false
+        );
+
+        criterion = qoperators.ne(10);
+        assert.deepStrictEqual(
+            criterion.eval(item.age, criterion.value),
+            false
+        );
+
+        criterion = qoperators.ne(11);
+        assert.deepStrictEqual(criterion.eval(item.age, criterion.value), true);
+
+        criterion = qoperators.ne("steve");
+        assert.deepStrictEqual(criterion.eval(item.age, criterion.value), true);
+
+        criterion = qoperators.lt(11);
+        assert.deepStrictEqual(criterion.eval(item.age, criterion.value), true);
+
+        criterion = qoperators.lt(9);
+        assert.deepStrictEqual(
+            criterion.eval(item.age, criterion.value),
+            false
+        );
+
+        criterion = qoperators.lte(12);
+        assert.deepStrictEqual(criterion.eval(item.age, criterion.value), true);
+
+        criterion = qoperators.lte(10);
+        assert.deepStrictEqual(criterion.eval(item.age, criterion.value), true);
+
+        criterion = qoperators.lte(9);
+        assert.deepStrictEqual(
+            criterion.eval(item.age, criterion.value),
+            false
+        );
+        //age: gt(9)
+
+        criterion = qoperators.gt(9);
+        assert.deepStrictEqual(criterion.eval(item.age, criterion.value), true);
+
+        criterion = qoperators.gt(10);
+        assert.deepStrictEqual(
+            criterion.eval(item.age, criterion.value),
+            false
+        );
+
+        criterion = qoperators.gt(11);
+        assert.deepStrictEqual(
+            criterion.eval(item.age, criterion.value),
+            false
+        );
+
+        criterion = qoperators.gte(9);
+        assert.deepStrictEqual(criterion.eval(item.age, criterion.value), true);
+
+        criterion = qoperators.gte(10);
+        assert.deepStrictEqual(criterion.eval(item.age, criterion.value), true);
+
+        criterion = qoperators.gte(11);
+        assert.deepStrictEqual(
+            criterion.eval(item.age, criterion.value),
+            false
+        );
     }),
 
-    test("Test Collection query equality works", async () => {
+    test("Test Collection simple query works", async () => {
         const store = new Store();
         const testCol = store.collections<{
             message: string;
@@ -401,11 +399,11 @@ runTests(
         await testCol.insert({ message: "message1" }, 1);
         await testCol.insert({ message: "message2" }, 2);
 
-        let result = testCol.query({ _id: 1 });
+        let result = testCol.where({ _id: 1 }).execute();
         assert.deepStrictEqual(result.length, 1);
         assert.deepStrictEqual(result[0].message, "message1");
 
-        result = testCol.query({ _id: 2 });
+        result = testCol.where({ _id: 2 }).execute();
         assert.deepStrictEqual(result.length, 1);
         assert.deepStrictEqual(result[0].message, "message2");
     }),
@@ -437,20 +435,24 @@ runTests(
         await collRef.insert({ age: 22, school: "randomUni", sex: "M" }, 2);
         await collRef.insert({ age: 24, school: "randomUni", sex: "F" }, 3);
 
-        let result = collRef.query({ age: queryOp.gt(10) });
+        let result = collRef.where({ age: qoperators.gt(10) }).execute();
         assert.deepStrictEqual(result.length, 2);
-        result = collRef.query({ age: queryOp.gt(10), sex: "F" });
+        result = collRef.where({ age: qoperators.gt(10), sex: "F" }).execute();
         assert.deepStrictEqual(result.length, 1);
         assert.deepStrictEqual(result[0].sex, "F");
         assert.deepStrictEqual(result[0].age, 24);
-        result = collRef.query({ age: queryOp.lt(24), sex: "M" });
+        result = collRef.where({ age: qoperators.lt(24), sex: "M" }).execute();
         assert.deepStrictEqual(result.length, 2);
-        result = collRef.query({
-            age: queryOp.lt(24),
-            sex: "M",
-            school: "randomSchool",
-        });
+        result = collRef
+            .where({
+                age: qoperators.lt(24),
+                sex: "M",
+                school: "randomSchool",
+            })
+            .execute();
         assert.deepStrictEqual(result.length, 1);
-        assert.deepStrictEqual(result[0]._id, 1);
+        assert.deepStrictEqual(result[0].age, 10);
+        assert.deepStrictEqual(result[0].school, "randomSchool");
+        assert.deepStrictEqual(result[0].sex, "M");
     })
 );

@@ -9,58 +9,28 @@ import {
     isQExpression,
     Operators,
     QOperator,
-    makeEqCriterion,
+    makeOpSpec,
     QuerySpec,
+    OperatorSpec,
 } from "./criteria";
 
-export function eq<T>(field: keyof Item<T>, value: StoreData): Criterion<T> {
-    return makeEqCriterion(field, value);
-}
+const _eq = (left: StoreData, right: StoreData) => left === right;
+const _ne = (left: StoreData, right: StoreData) => left !== right;
+const _gt = (left: StoreData, right: StoreData) =>
+    left && right ? left > right : false;
+const _gte = (left: StoreData, right: StoreData) =>
+    left && right ? left >= right : false;
+const _lt = (left: StoreData, right: StoreData) =>
+    left && right ? left < right : false;
+const _lte = (left: StoreData, right: StoreData) =>
+    left && right ? left <= right : false;
 
-export function ne<T>(field: keyof Item<T>, value: StoreData): Criterion<T> {
-    return makeCriterion(
-        Criteria.NE,
-        field,
-        value,
-        (item: Item<T>) => item[field] !== value
-    );
-}
-
-export function lt<T>(field: keyof Item<T>, value: StoreData): Criterion<T> {
-    return makeCriterion(
-        Criteria.LT,
-        field,
-        value,
-        (item: Item<T>) => item[field] < <any>value
-    );
-}
-
-export function gt<T>(field: keyof Item<T>, value: StoreData): Criterion<T> {
-    return makeCriterion(
-        Criteria.LT,
-        field,
-        value,
-        (item: Item<T>) => item[field] > <any>value
-    );
-}
-
-export function gte<T>(field: keyof Item<T>, value: StoreData): Criterion<T> {
-    return makeCriterion(
-        Criteria.LT,
-        field,
-        value,
-        (item: Item<T>) => item[field] >= <any>value
-    );
-}
-
-export function lte<T>(field: keyof Item<T>, value: StoreData): Criterion<T> {
-    return makeCriterion(
-        Criteria.LT,
-        field,
-        value,
-        (item: Item<T>) => item[field] <= <any>value
-    );
-}
+export const eq = (value: StoreData) => makeOpSpec(Criteria.EQ, value, _eq);
+export const ne = (value: StoreData) => makeOpSpec(Criteria.NE, value, _ne);
+export const gt = (value: StoreData) => makeOpSpec(Criteria.GT, value, _gt);
+export const gte = (value: StoreData) => makeOpSpec(Criteria.GTE, value, _gte);
+export const lt = (value: StoreData) => makeOpSpec(Criteria.LT, value, _lt);
+export const lte = (value: StoreData) => makeOpSpec(Criteria.LTE, value, _lte);
 
 export function or<T extends Object>(
     leftSpec: QuerySpec<T> | QOperator<T>,

@@ -12,7 +12,6 @@ type SerializedItem<T> = {
 } & { _id: Index; _collection: string };
 
 type PersistFn<T> = () => T;
-type PersistFnSync = () => void;
 
 //#TODO: Implement options for the persistance
 export class Collection<Schema extends object> {
@@ -109,7 +108,7 @@ export class Collection<Schema extends object> {
     }
 
     /** Returns all the items in a collection*/
-    all(): Schema[] {
+    all(): Item<Schema>[] {
         return Array.from(this._items.values());
     }
 
@@ -121,8 +120,7 @@ export class Collection<Schema extends object> {
 export class Store {
     /**@property fPath - Path to the file where the data should be persisted*/
     readonly fPath: string;
-    readonly _collections: Map<string | number, Collection<Item<object>>> =
-        new Map();
+    readonly _collections: Map<Index, Collection<object>> = new Map();
 
     //#TODO: Implement options for the persistance
     /** Provides references to the collections in the store.
