@@ -1,2 +1,3 @@
 export { Store } from "./store";
-export { queryOp } from "./query";
+export type { Collection } from "./store";
+export type { Query } from "./query";

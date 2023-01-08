@@ -12,9 +12,7 @@ import {
     allCriteria,
 } from "./criteria";
 
-export function parseQuerySpec<T extends object>(
-    qSpec: QuerySpec<T>
-): QExpression<T> {
+function parseQuerySpec<T extends object>(qSpec: QuerySpec<T>): QExpression<T> {
     //A non nested object with multiple properties is just a
     //sequence of and operations
     if (!(typeof qSpec === "object")) {
