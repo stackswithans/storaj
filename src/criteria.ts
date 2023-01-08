@@ -113,6 +113,6 @@ export function isCriterion<T>(expr: any): expr is Criterion<T> {
     return typeof expr === "object" && expr.criterionTy !== undefined;
 }
 
-export function allCriteria<T extends object>() {
-    return { eval: (item: Item<T>) => true };
+export function allCriteria<T extends object>(): QExpression<T> {
+    return { eval: (_: Item<T>) => true };
 }

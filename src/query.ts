@@ -7,8 +7,6 @@ import {
     makeEqCriterion,
     QuerySpec,
     OperatorSpec,
-    QOperator,
-    isQOperator,
     isOperatorSpec,
     makeCriterion,
     allCriteria,
@@ -62,21 +60,22 @@ export class Query<T extends object> {
     private _criteria: QExpression<T>;
     private _items: IterableIterator<Item<T>>;
 
-    constructor(
-        criteria: QuerySpec<T> | QOperator<T>,
-        collection: IterableIterator<Item<T>>
-    ) {
-        this._criteria = isQOperator(criteria)
-            ? criteria
-            : parseQuerySpec(criteria);
+    constructor(criteria: QuerySpec<T>, collection: IterableIterator<Item<T>>) {
+        this._criteria = parseQuerySpec(criteria);
         this._items = collection;
         this._selector = (item) => item;
     }
 
-    where(qSpec: QuerySpec<T> | QOperator<T>): Query<T> {
-        let qExpr = isQOperator(qSpec) ? qSpec : parseQuerySpec(qSpec);
+    and(qSpec: QuerySpec<T>): Query<T> {
+        let qExpr = parseQuerySpec(qSpec);
         //Multiple calls to where just adds and clauses to criteria
         this._criteria = makeOperator(Operators.AND, this._criteria, qExpr);
+        return this;
+    }
+
+    or(qSpec: QuerySpec<T>): Query<T> {
+        let qExpr = parseQuerySpec(qSpec);
+        this._criteria = makeOperator(Operators.OR, this._criteria, qExpr);
         return this;
     }
 

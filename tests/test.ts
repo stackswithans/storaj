@@ -479,6 +479,39 @@ runTests(
         assert.equal(results[2].age, 24);
     }),
 
+    test("Test or operator works", async () => {
+        const store = new Store();
+        const collRef = store.collections<{
+            age: number;
+            school: string;
+            sex: string;
+        }>("test");
+        await collRef.insertMany(
+            { _id: 1, age: 10, school: "randomSchool", sex: "M" },
+            { _id: 2, age: 22, school: "randomUni", sex: "M" },
+            { _id: 3, age: 24, school: "randomUni", sex: "F" }
+        );
+
+        const results = collRef.where({ age: 10 }).or({ age: 24 }).execute();
+        assert.equal(results.length, 2);
+        assert.ok(results.some((item) => item._id === 1));
+        assert.ok(results.some((item) => item._id === 3));
+
+        const results2 = collRef.where({ _id: 1 }).or({ age: 22 }).execute();
+        assert.equal(results2.length, 2);
+        assert.ok(results2.some((item) => item._id === 1));
+        assert.ok(results2.some((item) => item._id === 2));
+
+        const results3 = collRef
+            .where({ _id: 1 })
+            .or({ age: qoperators.gt(20), school: "randomUni" })
+            .execute();
+        assert.equal(results3.length, 3);
+        assert.ok(results3.some((item) => item._id === 1));
+        assert.ok(results3.some((item) => item._id === 2));
+        assert.ok(results3.some((item) => item._id === 3));
+    }),
+
     test("Test empty where returns all items", async () => {
         const store = new Store();
         const collRef = store.collections<{
