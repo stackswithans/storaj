@@ -148,20 +148,20 @@ Queries can also contain operators to express conditions other than equality:
 import { ne, gt, gte, lt, lte } from "storaj/qoperators";
 
 //Returns all todos that are not done and daysTillDue != 5;
-todos.where({ daysTillDue: queryOp.ne(5), done: false}).execute(); 
+todos.where({ daysTillDue: ne(5), done: false}).execute(); 
 
 //Returns all todos that are not done and daysTillDue > 5;
-todos.where({ daysTillDue: queryOp.gt(5), done: false}).execute(); 
+todos.where({ daysTillDue: gt(5), done: false}).execute(); 
 
 //Returns all todos that are not done and daysTillDue >= 5;
-todos.where({ daysTillDue: queryOp.gte(5), done: false}).execute(); 
+todos.where({ daysTillDue: gte(5), done: false}).execute(); 
 
 
 //Returns all todos that are not done and daysTillDue < 5;
-todos.where({ daysTillDue: queryOp.lt(5), done: false}).execute(); 
+todos.where({ daysTillDue: lt(5), done: false}).execute(); 
 
 //Returns all todos that are not done and daysTillDue <= 5;
-todos.where({ daysTillDue: queryOp.lte(5), done: false}).execute(); 
+todos.where({ daysTillDue: lte(5), done: false}).execute(); 
 ```
 
 ## Usage (Javascript)
