@@ -4,7 +4,7 @@ import { dirname } from "path";
 import { randomUUID } from "crypto";
 import { Item, Index } from "./types";
 import { Query } from "./query";
-import { QuerySpec, QOperator } from "./criteria";
+import { QuerySpec } from "./criteria";
 //TODO: Add doc comments
 
 type SerializedItem<T> = {
