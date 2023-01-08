@@ -511,6 +511,27 @@ runTests(
         assert.ok(results3.some((item) => item._id === 2));
         assert.ok(results3.some((item) => item._id === 3));
     }),
+    test("Test and operator works", async () => {
+        const store = new Store();
+        const collRef = store.collections<{
+            age: number;
+            school: string;
+            sex: string;
+        }>("test");
+        await collRef.insertMany(
+            { _id: 1, age: 10, school: "randomSchool", sex: "M" },
+            { _id: 2, age: 22, school: "randomUni", sex: "M" },
+            { _id: 3, age: 24, school: "randomUni", sex: "F" }
+        );
+
+        const results = collRef
+            .where({ school: qoperators.ne(null) })
+            .and({ sex: "M" })
+            .execute();
+        assert.equal(results.length, 2);
+        assert.ok(results.some((item) => item._id === 1));
+        assert.ok(results.some((item) => item._id === 2));
+    }),
 
     test("Test empty where returns all items", async () => {
         const store = new Store();
