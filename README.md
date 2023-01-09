@@ -145,23 +145,23 @@ clause to the query criteria, there is no precedence between both operators:
 ```
 Queries can also contain operators to express conditions other than equality: 
 ```typescript
-import { ne, gt, gte, lt, lte } from "storaj/qoperators";
+import { QOp } from "storaj";
 
 //Returns all todos that are not done and daysTillDue != 5;
-todos.where({ daysTillDue: ne(5), done: false}).execute(); 
+todos.where({ daysTillDue: QOp.ne(5), done: false}).execute(); 
 
 //Returns all todos that are not done and daysTillDue > 5;
-todos.where({ daysTillDue: gt(5), done: false}).execute(); 
+todos.where({ daysTillDue: QOp.gt(5), done: false}).execute(); 
 
 //Returns all todos that are not done and daysTillDue >= 5;
-todos.where({ daysTillDue: gte(5), done: false}).execute(); 
+todos.where({ daysTillDue: QOp.gte(5), done: false}).execute(); 
 
 
 //Returns all todos that are not done and daysTillDue < 5;
-todos.where({ daysTillDue: lt(5), done: false}).execute(); 
+todos.where({ daysTillDue: QOp.lt(5), done: false}).execute(); 
 
 //Returns all todos that are not done and daysTillDue <= 5;
-todos.where({ daysTillDue: lte(5), done: false}).execute(); 
+todos.where({ daysTillDue: QOp.lte(5), done: false}).execute(); 
 ```
 
 ## Usage (Javascript)
