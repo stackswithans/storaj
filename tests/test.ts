@@ -2,18 +2,10 @@ import { dirname } from "path";
 import {
     itemHasProp,
     validateSerializedItem,
-    storeFromObjects,
     Store,
     Collection,
 } from "../src/store";
-import {
-    buildMatcher,
-    Matcher,
-    processQuery,
-    OPList,
-    runMatcher,
-    queryOp,
-} from "../src/query";
+import * as qoperators from "../src/qoperators";
 import { test, runTests } from "./utils";
 import * as assert from "assert";
 import { readFileSync, rmdirSync, writeFileSync } from "fs";
@@ -89,30 +81,100 @@ runTests(
         );
     }),
 
-    test("storeFromObjects works on valid store schema", () => {
-        const store = [
+    test("insertMany works", async () => {
+        const items = [
             {
-                _id: 1,
-                _collection: "messages",
+                message: "hello world",
+                email: "test@gmail.com",
+            },
+            {
+                message: "hello world 2",
+                email: "test2@gmail.com",
+            },
+            {
+                message: "hello world 3",
+                email: "test3@gmail.com",
             },
         ];
 
-        const cellaStore = storeFromObjects(store);
-        assert.ok(cellaStore instanceof Store);
-        assert.ok(cellaStore.hasCollection("messages"));
-        assert.deepStrictEqual(cellaStore.collNames()[0], "messages");
-        assert.ok(cellaStore.collections("messages") instanceof Collection);
-        assert.deepStrictEqual(cellaStore.collections("messages").count(), 1);
+        const store = new Store();
+        const collection = store.collections<{
+            message: string;
+            email: string;
+        }>("messages");
+        await collection.insertMany(...items);
+
+        assert.ok(store.hasCollection("messages"));
+        assert.deepStrictEqual(store.collNames()[0], "messages");
+
+        assert.deepStrictEqual(collection.count(), 3);
     }),
 
-    test("storeFromObjects fails with non-list argument", () => {
-        const store = {} as any;
-        assert.throws(
-            () => storeFromObjects(store),
+    test("insertMany fails on invalid schema", async () => {
+        const items = [
+            {
+                _id: 3.212,
+                message: "hello world",
+                email: "test@gmail.com",
+            },
+            {
+                message: "hello world 2",
+                email: "test2@gmail.com",
+            },
+            {
+                message: "hello world 3",
+                email: "test3@gmail.com",
+            },
+        ];
+
+        const store = new Store();
+        const collection = store.collections<{
+            message: string;
+            email: string;
+        }>("messages");
+        await assert.rejects(
+            async () => await collection.insertMany(...items),
             new Error(
-                "Invalid schema passed to function. Argument must be an array of objects"
+                `InsertionError: The id of an item must be a number or a string.`
             )
         );
+        assert.throws(
+            () => collection.insertManySync(...items),
+            new Error(
+                `InsertionError: The id of an item must be a number or a string.`
+            )
+        );
+
+        assert.deepStrictEqual(collection.count(), 0);
+    }),
+
+    test("insertManySync works", () => {
+        const items = [
+            {
+                message: "hello world",
+                email: "test@gmail.com",
+            },
+            {
+                message: "hello world 2",
+                email: "test2@gmail.com",
+            },
+            {
+                message: "hello world 3",
+                email: "test3@gmail.com",
+            },
+        ];
+
+        const store = new Store();
+        const collection = store.collections<{
+            message: string;
+            email: string;
+        }>("messages");
+        collection.insertMany(...items);
+
+        assert.ok(store.hasCollection("messages"));
+        assert.deepStrictEqual(store.collNames()[0], "messages");
+
+        assert.deepStrictEqual(collection.count(), 3);
     }),
 
     test("Store collections creates new collection if not exists", () => {
@@ -190,7 +252,7 @@ runTests(
         await testCol.insert({ message: "message1" }, 1);
         await testCol.insert({ message: "message2" }, 2);
 
-        const serStore = store.serialize();
+        const serStore = store._serialize();
         assert.deepStrictEqual(
             serStore,
             JSON.stringify([
@@ -209,7 +271,7 @@ runTests(
         await store.persist();
 
         const data = readFileSync(filePath, "utf8");
-        assert.deepStrictEqual(data, store.serialize());
+        assert.deepStrictEqual(data, store._serialize());
 
         //Clean up opened file
         await unlink(filePath);
@@ -226,7 +288,7 @@ runTests(
         assert.deepStrictEqual(fileData, data);
 
         const store = new Store(filePath);
-        const serializedStore = store.serialize();
+        const serializedStore = store._serialize();
         assert.deepStrictEqual(data, serializedStore);
 
         //Clean up opened file
@@ -236,7 +298,6 @@ runTests(
     test("Test Collection get works as expected", async () => {
         const store = new Store();
         const testCol = store.collections<{
-            _id: number | string;
             message: string;
         }>("test");
         await testCol.insert({ message: "message1" }, 1);
@@ -249,104 +310,123 @@ runTests(
         assert.deepStrictEqual(testCol.get(3), null);
     }),
 
-    test("Test buildMatcher  builds matcher correctly", async () => {
-        let matcher = buildMatcher(1);
-        assert.deepStrictEqual(matcher instanceof Matcher, true);
-        assert.deepStrictEqual(matcher.op, OPList.EQ);
-
-        matcher = buildMatcher(new Matcher(OPList.EQ, 1));
-        assert.deepStrictEqual(matcher instanceof Matcher, true);
-        assert.deepStrictEqual(matcher.op, OPList.EQ);
-        assert.deepStrictEqual(matcher.value, 1);
-
-        assert.throws(() => buildMatcher(undefined as any));
-    }),
-
-    test("Test runMatcher works as expected correctly", async () => {
-        let matcher = new Matcher(OPList.EQ, 1);
-        assert.deepStrictEqual(runMatcher(matcher, 1), true);
-        assert.deepStrictEqual(runMatcher(matcher, 2), false);
-        assert.deepStrictEqual(matcher.op, OPList.EQ);
-
-        matcher = new Matcher(OPList.NE, "test");
-        assert.deepStrictEqual(runMatcher(matcher, "test"), false);
-        assert.deepStrictEqual(runMatcher(matcher, "test1"), true);
-        assert.deepStrictEqual(matcher.op, OPList.NE);
-
-        matcher = new Matcher(OPList.LT, 1);
-        assert.deepStrictEqual(runMatcher(matcher, 2), false);
-        assert.deepStrictEqual(runMatcher(matcher, 1), false);
-        assert.deepStrictEqual(runMatcher(matcher, 0), true);
-        assert.deepStrictEqual(matcher.op, OPList.LT);
-
-        matcher = new Matcher(OPList.LTE, 1);
-        assert.deepStrictEqual(runMatcher(matcher, 1), true);
-        assert.deepStrictEqual(runMatcher(matcher, 0), true);
-        assert.deepStrictEqual(runMatcher(matcher, 3), false);
-        assert.deepStrictEqual(matcher.op, OPList.LTE);
-
-        matcher = new Matcher(OPList.GT, 1);
-        assert.deepStrictEqual(runMatcher(matcher, 1), false);
-        assert.deepStrictEqual(runMatcher(matcher, 2), true);
-        assert.deepStrictEqual(matcher.op, OPList.GT);
-
-        matcher = new Matcher(OPList.GTE, 1);
-        assert.deepStrictEqual(runMatcher(matcher, 1), true);
-        assert.deepStrictEqual(runMatcher(matcher, 2), true);
-        assert.deepStrictEqual(runMatcher(matcher, 0), false);
-        assert.deepStrictEqual(matcher.op, OPList.GTE);
-    }),
-
-    test("Test queryOp builds correct matchers", () => {
-        let matcher = queryOp.eq(1);
-        assert.deepStrictEqual(matcher.op, OPList.EQ);
-        matcher = queryOp.ne(1);
-        assert.deepStrictEqual(matcher.op, OPList.NE);
-        matcher = queryOp.lt(1);
-        assert.deepStrictEqual(matcher.op, OPList.LT);
-        matcher = queryOp.gt(1);
-        assert.deepStrictEqual(matcher.op, OPList.GT);
-        matcher = queryOp.lte(1);
-        assert.deepStrictEqual(matcher.op, OPList.LTE);
-        matcher = queryOp.gte(1);
-        assert.deepStrictEqual(matcher.op, OPList.GTE);
-    }),
-
-    test("Test processQuery works as expected correctly", async () => {
-        type Message = { _id: number | string; message: string };
-        let q: Message = {
-            _id: 2,
-            message: "hello",
+    test("Test qoperators work correctly works as expected correctly", async () => {
+        const item = {
+            _id: "assa",
+            name: "john",
+            age: 10,
         };
-        const data = processQuery<Message>(q);
-        assert.deepStrictEqual(data.get("_id")?.op, OPList.EQ);
-        assert.deepStrictEqual(data.get("_id")?.value, 2);
-        assert.deepStrictEqual(data.get("message")?.op, OPList.EQ);
-        assert.deepStrictEqual(data.get("message")?.value, "hello");
+
+        let criterion = qoperators.eq("john");
+        assert.deepStrictEqual(
+            criterion.eval(criterion.value, item.name),
+            true
+        );
+
+        criterion = qoperators.eq(11);
+        assert.deepStrictEqual(
+            criterion.eval(item.age, criterion.value),
+            false
+        );
+
+        criterion = qoperators.ne(10);
+        assert.deepStrictEqual(
+            criterion.eval(item.age, criterion.value),
+            false
+        );
+
+        criterion = qoperators.ne(11);
+        assert.deepStrictEqual(criterion.eval(item.age, criterion.value), true);
+
+        criterion = qoperators.ne("steve");
+        assert.deepStrictEqual(criterion.eval(item.age, criterion.value), true);
+
+        criterion = qoperators.lt(11);
+        assert.deepStrictEqual(criterion.eval(item.age, criterion.value), true);
+
+        criterion = qoperators.lt(9);
+        assert.deepStrictEqual(
+            criterion.eval(item.age, criterion.value),
+            false
+        );
+
+        criterion = qoperators.lte(12);
+        assert.deepStrictEqual(criterion.eval(item.age, criterion.value), true);
+
+        criterion = qoperators.lte(10);
+        assert.deepStrictEqual(criterion.eval(item.age, criterion.value), true);
+
+        criterion = qoperators.lte(9);
+        assert.deepStrictEqual(
+            criterion.eval(item.age, criterion.value),
+            false
+        );
+        //age: gt(9)
+
+        criterion = qoperators.gt(9);
+        assert.deepStrictEqual(criterion.eval(item.age, criterion.value), true);
+
+        criterion = qoperators.gt(10);
+        assert.deepStrictEqual(
+            criterion.eval(item.age, criterion.value),
+            false
+        );
+
+        criterion = qoperators.gt(11);
+        assert.deepStrictEqual(
+            criterion.eval(item.age, criterion.value),
+            false
+        );
+
+        criterion = qoperators.gte(9);
+        assert.deepStrictEqual(criterion.eval(item.age, criterion.value), true);
+
+        criterion = qoperators.gte(10);
+        assert.deepStrictEqual(criterion.eval(item.age, criterion.value), true);
+
+        criterion = qoperators.gte(11);
+        assert.deepStrictEqual(
+            criterion.eval(item.age, criterion.value),
+            false
+        );
     }),
 
-    test("Test Collection query equality works", async () => {
+    test("Test Collection simple query works", async () => {
         const store = new Store();
         const testCol = store.collections<{
-            _id: string | number;
             message: string;
         }>("test");
         await testCol.insert({ message: "message1" }, 1);
         await testCol.insert({ message: "message2" }, 2);
 
-        let result = testCol.query({ _id: 1 });
+        let result = testCol.where({ _id: 1 }).execute();
         assert.deepStrictEqual(result.length, 1);
         assert.deepStrictEqual(result[0].message, "message1");
 
-        result = testCol.query({ _id: 2 });
+        result = testCol.where({ _id: 2 }).execute();
         assert.deepStrictEqual(result.length, 1);
         assert.deepStrictEqual(result[0].message, "message2");
     }),
 
+    /*
+    test("Test Collection or queries work", async () => {
+        const store = new Store();
+        const numbers = store.collections<{ num: string }>("numbers");
+        numbers.where(
+            or(
+                {
+                    num: "10212",
+                },
+                {
+                    num: "10212",
+                }
+            )
+        );
+    }),*/
+
     test("Test Collection complex queries wok", async () => {
         const store = new Store();
         const collRef = store.collections<{
-            _id: string | number;
             age: number;
             school: string;
             sex: string;
@@ -355,20 +435,121 @@ runTests(
         await collRef.insert({ age: 22, school: "randomUni", sex: "M" }, 2);
         await collRef.insert({ age: 24, school: "randomUni", sex: "F" }, 3);
 
-        let result = collRef.query({ age: queryOp.gt(10) });
+        let result = collRef.where({ age: qoperators.gt(10) }).execute();
         assert.deepStrictEqual(result.length, 2);
-        result = collRef.query({ age: queryOp.gt(10), sex: "F" });
+        result = collRef.where({ age: qoperators.gt(10), sex: "F" }).execute();
         assert.deepStrictEqual(result.length, 1);
         assert.deepStrictEqual(result[0].sex, "F");
         assert.deepStrictEqual(result[0].age, 24);
-        result = collRef.query({ age: queryOp.lt(24), sex: "M" });
+        result = collRef.where({ age: qoperators.lt(24), sex: "M" }).execute();
         assert.deepStrictEqual(result.length, 2);
-        result = collRef.query({
-            age: queryOp.lt(24),
-            sex: "M",
-            school: "randomSchool",
-        });
+        result = collRef
+            .where({
+                age: qoperators.lt(24),
+                sex: "M",
+                school: "randomSchool",
+            })
+            .execute();
         assert.deepStrictEqual(result.length, 1);
-        assert.deepStrictEqual(result[0]._id, 1);
+        assert.deepStrictEqual(result[0].age, 10);
+        assert.deepStrictEqual(result[0].school, "randomSchool");
+        assert.deepStrictEqual(result[0].sex, "M");
+    }),
+
+    test("Test select works correctly projects props", async () => {
+        const store = new Store();
+        const collRef = store.collections<{
+            age: number;
+            school: string;
+            sex: string;
+        }>("test");
+        await collRef.insertMany(
+            { _id: 1, age: 10, school: "randomSchool", sex: "M" },
+            { _id: 2, age: 22, school: "randomUni", sex: "M" },
+            { _id: 3, age: 24, school: "randomUni", sex: "F" }
+        );
+
+        const results = collRef
+            .where({})
+            .select((item) => ({ age: item.age }))
+            .execute();
+        assert.equal(results.length, 3);
+        assert.equal(results[0].age, 10);
+        assert.equal(results[1].age, 22);
+        assert.equal(results[2].age, 24);
+    }),
+
+    test("Test or operator works", async () => {
+        const store = new Store();
+        const collRef = store.collections<{
+            age: number;
+            school: string;
+            sex: string;
+        }>("test");
+        await collRef.insertMany(
+            { _id: 1, age: 10, school: "randomSchool", sex: "M" },
+            { _id: 2, age: 22, school: "randomUni", sex: "M" },
+            { _id: 3, age: 24, school: "randomUni", sex: "F" }
+        );
+
+        const results = collRef.where({ age: 10 }).or({ age: 24 }).execute();
+        assert.equal(results.length, 2);
+        assert.ok(results.some((item) => item._id === 1));
+        assert.ok(results.some((item) => item._id === 3));
+
+        const results2 = collRef.where({ _id: 1 }).or({ age: 22 }).execute();
+        assert.equal(results2.length, 2);
+        assert.ok(results2.some((item) => item._id === 1));
+        assert.ok(results2.some((item) => item._id === 2));
+
+        const results3 = collRef
+            .where({ _id: 1 })
+            .or({ age: qoperators.gt(20), school: "randomUni" })
+            .execute();
+        assert.equal(results3.length, 3);
+        assert.ok(results3.some((item) => item._id === 1));
+        assert.ok(results3.some((item) => item._id === 2));
+        assert.ok(results3.some((item) => item._id === 3));
+    }),
+    test("Test and operator works", async () => {
+        const store = new Store();
+        const collRef = store.collections<{
+            age: number;
+            school: string;
+            sex: string;
+        }>("test");
+        await collRef.insertMany(
+            { _id: 1, age: 10, school: "randomSchool", sex: "M" },
+            { _id: 2, age: 22, school: "randomUni", sex: "M" },
+            { _id: 3, age: 24, school: "randomUni", sex: "F" }
+        );
+
+        const results = collRef
+            .where({ school: qoperators.ne(null) })
+            .and({ sex: "M" })
+            .execute();
+        assert.equal(results.length, 2);
+        assert.ok(results.some((item) => item._id === 1));
+        assert.ok(results.some((item) => item._id === 2));
+    }),
+
+    test("Test empty where returns all items", async () => {
+        const store = new Store();
+        const collRef = store.collections<{
+            age: number;
+            school: string;
+            sex: string;
+        }>("test");
+        await collRef.insertMany(
+            { _id: 1, age: 10, school: "randomSchool", sex: "M" },
+            { _id: 2, age: 22, school: "randomUni", sex: "M" },
+            { _id: 3, age: 24, school: "randomUni", sex: "F" }
+        );
+
+        const results = collRef.where({}).execute();
+        assert.equal(results.length, 3);
+        assert.equal(results[0]._id, 1);
+        assert.equal(results[1]._id, 2);
+        assert.equal(results[2]._id, 3);
     })
 );
