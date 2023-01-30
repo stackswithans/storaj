@@ -3,7 +3,7 @@ import { writeFileSync, readFileSync, existsSync, mkdirSync } from "fs";
 import { dirname } from "path";
 import { randomUUID } from "crypto";
 import { Item, Index } from "./types";
-import { Query } from "./query";
+import { Query, Where, Delete } from "./query";
 import { QuerySpec } from "./criteria";
 //TODO: Add doc comments
 
@@ -96,6 +96,24 @@ export class Collection<Schema extends object> {
 
     where(criteria: QuerySpec<Schema>): Query<Schema> {
         return new Query(criteria, this._items.values());
+    }
+
+    iter(): IterableIterator<Item<Schema>> {
+        return this._items.values();
+    }
+
+    async deleteById(id: Index): Promise<boolean> {
+        if (this._items.delete(id)) {
+            await this._dump();
+            return true;
+        }
+        return false;
+    }
+
+    delete(): Where<Schema, Delete<Schema>> {
+        return {
+            where: (q: QuerySpec<Schema>) => new Delete(q, this),
+        };
     }
 
     aggregate() {}

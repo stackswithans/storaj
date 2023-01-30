@@ -456,6 +456,32 @@ runTests(
         assert.deepStrictEqual(result[0].sex, "M");
     }),
 
+    test("Test delete works", async () => {
+        const store = new Store();
+        const collRef = store.collections<{
+            age: number;
+            school: string;
+            sex: string;
+        }>("test");
+
+        await collRef.insert({ age: 10, school: "randomSchool", sex: "M" }, 1);
+        await collRef.insert({ age: 22, school: "randomUni", sex: "M" }, 2);
+        await collRef.insert({ age: 24, school: "randomUni", sex: "F" }, 3);
+
+        let result = await collRef
+            .delete()
+            .where({ age: qoperators.gt(10) })
+            .execute();
+
+        assert.deepStrictEqual(result, 2);
+        assert.deepStrictEqual(collRef.count(), 1);
+
+        let results = collRef.where({}).execute();
+
+        assert.deepStrictEqual(results.length, 1);
+        assert.deepStrictEqual(results[0].age, 10);
+    }),
+
     test("Test select works correctly projects props", async () => {
         const store = new Store();
         const collRef = store.collections<{

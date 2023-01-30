@@ -11,6 +11,7 @@ import {
     makeCriterion,
     allCriteria,
 } from "./criteria";
+import { type Collection } from "./store";
 
 function parseQuerySpec<T extends object>(qSpec: QuerySpec<T>): QExpression<T> {
     //A non nested object with multiple properties is just a
@@ -53,6 +54,10 @@ function parseQuerySpec<T extends object>(qSpec: QuerySpec<T>): QExpression<T> {
 
 type Projection<T> = (item: Item<T>) => Partial<Item<T>>;
 
+export type Where<T extends object, CollectionOp extends Delete<T>> = {
+    where: (q: QuerySpec<T>) => CollectionOp;
+};
+
 export class Query<T extends object> {
     private _selector: Projection<T>;
     private _criteria: QExpression<T>;
@@ -91,6 +96,43 @@ export class Query<T extends object> {
             resultSet.push(this._selector(item));
         }
         return resultSet;
+    }
+}
+
+export class Delete<T extends object> {
+    private _criteria: QExpression<T>;
+    private _collection: Collection<T>;
+
+    constructor(criteria: QuerySpec<T>, collection: Collection<T>) {
+        this._criteria = parseQuerySpec(criteria);
+        this._collection = collection;
+    }
+
+    and(qSpec: QuerySpec<T>): Delete<T> {
+        let qExpr = parseQuerySpec(qSpec);
+        //Multiple calls to where just adds and clauses to criteria
+        this._criteria = makeOperator(Operators.AND, this._criteria, qExpr);
+        return this;
+    }
+
+    or(qSpec: QuerySpec<T>): Delete<T> {
+        let qExpr = parseQuerySpec(qSpec);
+        this._criteria = makeOperator(Operators.OR, this._criteria, qExpr);
+        return this;
+    }
+
+    async execute(): Promise<number> {
+        let resultSet = [];
+        for (let item of this._collection.iter()) {
+            if (this._criteria.eval(item)) {
+                resultSet.push(item._id);
+            }
+        }
+        for (let id of resultSet) {
+            await this._collection.deleteById(id);
+        }
+
+        return resultSet.length;
     }
 }
 
