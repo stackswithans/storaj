@@ -163,6 +163,46 @@ todos.where({ daysTillDue: QOp.lt(5), done: false}).execute();
 //Returns all todos that are not done and daysTillDue <= 5;
 todos.where({ daysTillDue: QOp.lte(5), done: false}).execute(); 
 ```
+### Update objects
 
+```typescript
+
+
+//Use the update method to update objects in a store
+//the update method is async. Either await or handle the promise;
+
+(async () => {
+    const todos = store.collections<Todo>("todos");
+    await todos
+          .update()
+          .set({ done: true})
+          .where({dueDate: "27-08-2021"})
+          .execute(); // Sets done to true on all todo items that have dueDate == "27-08-2021";
+
+    //Items can also be updated by using the `updateById` method: 
+    await todos.updateById(1, {done: false, dueDate: "01-01-2022"})
+
+})();
+```
+
+### Remove objects
+
+```typescript
+
+
+//Use the delete method to remove objects from a store
+//the delete method is async. Either await or handle the promise;
+
+(async () => {
+    const todos = store.collections<Todo>("todos");
+    await todos
+          .delete()
+          .where({dueDate: "27-08-2021"})
+          .execute(); // Deletes all todo items that have dueDate == "27-08-2021";
+
+    //Items can also be deleted by using the `deleteById` method: 
+    await todos.await("someId")
+})();
+```
 ## Usage (Javascript)
 The API is exactly the same, only difference is the absence of generic type parameters in some of the functions/classes.
