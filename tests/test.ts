@@ -482,6 +482,35 @@ runTests(
         assert.deepStrictEqual(results[0].age, 10);
     }),
 
+    test("Test update works", async () => {
+        const store = new Store();
+        const collRef = store.collections<{
+            age: number;
+            school: string;
+            sex: string;
+        }>("test");
+
+        await collRef.insert({ age: 10, school: "randomSchool", sex: "M" }, 1);
+        await collRef.insert({ age: 22, school: "randomUni", sex: "M" }, 2);
+        await collRef.insert({ age: 24, school: "randomUni", sex: "F" }, 3);
+
+        let result = await collRef
+            .update()
+            .set({ school: "OlderThanTen" })
+            .where({ age: qoperators.gt(10) })
+            .execute();
+
+        assert.deepStrictEqual(result, 2);
+        assert.deepStrictEqual(collRef.count(), 3);
+
+        let results = collRef.all();
+
+        assert.deepStrictEqual(results[1].school, "OlderThanTen");
+        assert.deepStrictEqual(results[1].age, 22);
+        assert.deepStrictEqual(results[2].school, "OlderThanTen");
+        assert.deepStrictEqual(results[2].age, 24);
+    }),
+
     test("Test select works correctly projects props", async () => {
         const store = new Store();
         const collRef = store.collections<{

@@ -13,6 +13,15 @@ import {
 } from "./criteria";
 import { type Collection } from "./store";
 
+function isStoreData(expr: any): expr is StoreData {
+    return (
+        typeof expr === "number" ||
+        typeof expr === "string" ||
+        expr === null ||
+        typeof expr === "boolean"
+    );
+}
+
 function parseQuerySpec<T extends object>(qSpec: QuerySpec<T>): QExpression<T> {
     //A non nested object with multiple properties is just a
     //sequence of and operations
@@ -54,31 +63,45 @@ function parseQuerySpec<T extends object>(qSpec: QuerySpec<T>): QExpression<T> {
 
 type Projection<T> = (item: Item<T>) => Partial<Item<T>>;
 
-export type Where<T extends object, CollectionOp extends Delete<T>> = {
-    where: (q: QuerySpec<T>) => CollectionOp;
-};
+class Expression<T extends object> {
+    criteria: QExpression<T>;
+
+    constructor(criteria: QuerySpec<T>) {
+        this.criteria = parseQuerySpec(criteria);
+    }
+
+    and(qSpec: QuerySpec<T>): Expression<T> {
+        let qExpr = parseQuerySpec(qSpec);
+        //Multiple calls to where just adds and clauses to criteria
+        this.criteria = makeOperator(Operators.AND, this.criteria, qExpr);
+        return this;
+    }
+
+    or(qSpec: QuerySpec<T>): Expression<T> {
+        let qExpr = parseQuerySpec(qSpec);
+        this.criteria = makeOperator(Operators.OR, this.criteria, qExpr);
+        return this;
+    }
+}
 
 export class Query<T extends object> {
-    private _selector: Projection<T>;
-    private _criteria: QExpression<T>;
+    private _exp: Expression<T>;
     private _items: IterableIterator<Item<T>>;
+    private _selector: Projection<T>;
 
     constructor(criteria: QuerySpec<T>, collection: IterableIterator<Item<T>>) {
-        this._criteria = parseQuerySpec(criteria);
+        this._exp = new Expression(criteria);
         this._items = collection;
         this._selector = (item) => item;
     }
 
     and(qSpec: QuerySpec<T>): Query<T> {
-        let qExpr = parseQuerySpec(qSpec);
-        //Multiple calls to where just adds and clauses to criteria
-        this._criteria = makeOperator(Operators.AND, this._criteria, qExpr);
+        this._exp.and(qSpec);
         return this;
     }
 
     or(qSpec: QuerySpec<T>): Query<T> {
-        let qExpr = parseQuerySpec(qSpec);
-        this._criteria = makeOperator(Operators.OR, this._criteria, qExpr);
+        this._exp.or(qSpec);
         return this;
     }
 
@@ -90,7 +113,7 @@ export class Query<T extends object> {
     execute(): Array<ReturnType<Projection<T>>> {
         let resultSet = [];
         for (let item of this._items) {
-            if (!this._criteria.eval(item)) {
+            if (!this._exp.criteria.eval(item)) {
                 continue;
             }
             resultSet.push(this._selector(item));
@@ -99,32 +122,69 @@ export class Query<T extends object> {
     }
 }
 
-export class Delete<T extends object> {
-    private _criteria: QExpression<T>;
+export class Update<T extends object> {
+    private _exp: Expression<T>;
     private _collection: Collection<T>;
+    private _setParam: SetSpec<T>;
 
-    constructor(criteria: QuerySpec<T>, collection: Collection<T>) {
-        this._criteria = parseQuerySpec(criteria);
+    constructor(
+        criteria: QuerySpec<T>,
+        setParam: SetSpec<T>,
+        collection: Collection<T>
+    ) {
+        this._exp = new Expression(criteria);
         this._collection = collection;
+        this._setParam = setParam;
     }
 
-    and(qSpec: QuerySpec<T>): Delete<T> {
-        let qExpr = parseQuerySpec(qSpec);
-        //Multiple calls to where just adds and clauses to criteria
-        this._criteria = makeOperator(Operators.AND, this._criteria, qExpr);
+    and(qSpec: QuerySpec<T>): Update<T> {
+        this._exp.and(qSpec);
         return this;
     }
 
-    or(qSpec: QuerySpec<T>): Delete<T> {
-        let qExpr = parseQuerySpec(qSpec);
-        this._criteria = makeOperator(Operators.OR, this._criteria, qExpr);
+    or(qSpec: QuerySpec<T>): Update<T> {
+        this._exp.or(qSpec);
         return this;
     }
 
     async execute(): Promise<number> {
         let resultSet = [];
         for (let item of this._collection.iter()) {
-            if (this._criteria.eval(item)) {
+            if (this._exp.criteria.eval(item)) {
+                resultSet.push(item._id);
+            }
+        }
+        for (let id of resultSet) {
+            await this._collection.updateById(id, this._setParam);
+        }
+
+        return resultSet.length;
+    }
+}
+
+export class Delete<T extends object> {
+    private _exp: Expression<T>;
+    private _collection: Collection<T>;
+
+    constructor(criteria: QuerySpec<T>, collection: Collection<T>) {
+        this._exp = new Expression(criteria);
+        this._collection = collection;
+    }
+
+    and(qSpec: QuerySpec<T>): Delete<T> {
+        this._exp.and(qSpec);
+        return this;
+    }
+
+    or(qSpec: QuerySpec<T>): Delete<T> {
+        this._exp.or(qSpec);
+        return this;
+    }
+
+    async execute(): Promise<number> {
+        let resultSet = [];
+        for (let item of this._collection.iter()) {
+            if (this._exp.criteria.eval(item)) {
                 resultSet.push(item._id);
             }
         }
@@ -136,11 +196,15 @@ export class Delete<T extends object> {
     }
 }
 
-function isStoreData(expr: any): expr is StoreData {
-    return (
-        typeof expr === "number" ||
-        typeof expr === "string" ||
-        expr === null ||
-        typeof expr === "boolean"
-    );
-}
+export type SetSpec<T extends object> = Partial<Item<T>>;
+
+export type Where<
+    T extends object,
+    CollectionOp extends Update<T> | Delete<T>
+> = {
+    where: (q: QuerySpec<T>) => CollectionOp;
+};
+
+export type Set<T extends object, CollectionOp extends Update<T>> = {
+    set: (q: SetSpec<T>) => Where<T, CollectionOp>;
+};
