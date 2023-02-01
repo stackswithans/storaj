@@ -1,6 +1,6 @@
 {
   "name": "storaj",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "A simple lightweight object storage library",
   "main": "./dist/main.js", 
   "types": "./dist/main.d.ts", 
