@@ -201,7 +201,7 @@ todos.where({ daysTillDue: QOp.lte(5), done: false}).execute();
           .execute(); // Deletes all todo items that have dueDate == "27-08-2021";
 
     //Items can also be deleted by using the `deleteById` method: 
-    await todos.await("someId")
+    await todos.deleteById("someId")
 })();
 ```
 ## Usage (Javascript)
