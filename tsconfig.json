@@ -1,14 +1,16 @@
 {
     "compilerOptions": {
-        "target":"ES6", 
-        "module": "CommonJS",
-        "strict":true,
+        "module": "esnext",
+        "target": "esnext",
+        "strict": true,
         "removeComments": true,
-        "noImplicitAny":true, 
-        "sourceMap": false, 
-        "outDir":"./dist/", 
-        "declaration":true
+        "noImplicitAny": true,
+        "sourceMap": true,
+        "outDir": "./dist/",
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "skipLibCheck": true
     },
     "include": ["./src/**/*"],
-    "exclude": ["node_modules", "**/*.spec.ts"]
+    "exclude": ["node_modules/*", "**/*.spec.ts"]
 }

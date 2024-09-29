@@ -1,5 +1,5 @@
 import { StoreData } from "./types";
-import { Criteria, makeOpSpec } from "./criteria";
+import { Criteria, makeOpSpec } from "./criteria.js";
 
 const _eq = (left: StoreData, right: StoreData) => left === right;
 const _ne = (left: StoreData, right: StoreData) => left !== right;

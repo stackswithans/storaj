@@ -3,8 +3,8 @@ import { writeFileSync, readFileSync, existsSync, mkdirSync } from "fs";
 import { dirname } from "path";
 import { randomUUID } from "crypto";
 import { Item, Index } from "./types";
-import { Query, Where, Delete, Set, Update, SetSpec } from "./query";
-import { QuerySpec } from "./criteria";
+import { Query, Where, Delete, Set, Update, SetSpec } from "./query.js";
+import { QuerySpec } from "./criteria.js";
 //TODO: Add doc comments
 
 type SerializedItem<T> = {

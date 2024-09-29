@@ -1,38 +1,42 @@
 {
   "name": "storaj",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "A simple lightweight object storage library",
-  "main": "./dist/main.js", 
-  "types": "./dist/main.d.ts", 
-  "homepage":"https://github.com/stackswithans/storaj", 
+  "main": "./dist/main.js",
+  "type": "module", 
+  "types": "./dist/main.d.ts",
+  "homepage": "https://github.com/stackswithans/storaj",
   "scripts": {
-    "test": "ts-node ./tests/test.ts",
+    "test": "tsx ./tests/test.ts",
     "build": "tsc",
-    "cli": "ts-node ./cli.ts", 
-    "check": "tsc --noEmit", 
-    "prepare":"npm run test && npm run build"
-  },  
+    "cli": "tsx ./cli.ts",
+    "check": "tsc --noEmit",
+    "prepare": "npm run test && npm run build"
+  },
   "exports": {
     ".": {
-        "import": "./dist/main.js"
-    }, 
+      "import": "./dist/main.js"
+    },
     "./qoperators": {
-        "import": "./dist/qoperators.js"
+      "import": "./dist/qoperators.js"
     }
-  }, 
-  "files": ["/dist/*"], 
+  },
+  "files": [
+    "/dist/*"
+  ],
   "keywords": [
     "storage",
     "database",
     "library",
-    "in-memory store", 
+    "in-memory store",
     "backend"
   ],
   "author": "stackwithans",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^17.0.8",
-    "ts-node": "^10.4.0",
-    "typescript": "^4.5.4"
-  }
+    "@types/node": "^22.7.4",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2"
+  },
+  "packageManager": "pnpm@9.5.0+sha512.140036830124618d624a2187b50d04289d5a087f326c9edfc0ccd733d76c4f52c3a313d4fc148794a2a9d81553016004e6742e8cf850670268a7387fc220c903"
 }

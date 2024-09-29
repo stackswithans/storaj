@@ -10,7 +10,7 @@ import {
     isOperatorSpec,
     makeCriterion,
     allCriteria,
-} from "./criteria";
+} from "./criteria.js";
 import { type Collection } from "./store";
 
 function isStoreData(expr: any): expr is StoreData {
